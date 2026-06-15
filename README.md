@@ -8,7 +8,7 @@ The default session counts from 0 through 200, inclusive, so the full run lasts 
 
 The start button says **Vamos**, which is a natural Spanish equivalent of "let's go" for this use. During a run, the button changes to **Alto**. You can also say commands such as "go", "vamos", "stop", "alto", "para", or "detente".
 
-The **Voice** link appears only before and after counting. It opens an in-app voice picker for installed Spanish system voices. To add higher-quality voices, use iOS Settings > Accessibility > Spoken Content > Voices > Spanish, then relaunch or reopen Voice.
+The **Voz** link appears only before and after counting. It opens an in-app voice picker for installed Spanish system voices. To add higher-quality voices, use iOS Settings > Accessibility > Spoken Content > Voices > Spanish, then relaunch or reopen Voz.
 
 Counting is offline-first:
 

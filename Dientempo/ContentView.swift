@@ -54,7 +54,7 @@ struct ContentView: View {
                     .accessibilityLabel(counter.isRunning ? "Alto" : "Vamos")
 
                     if !counter.isCounting {
-                        Button("Voice") {
+                        Button("Voz") {
                             isShowingVoiceSettings = true
                         }
                         .font(.system(size: voiceLinkFontSize(in: proxy.size), weight: .semibold, design: .rounded))
