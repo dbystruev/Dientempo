@@ -10,13 +10,13 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     private let synthesizer = AVSpeechSynthesizer()
-    private let selectedVoice: AVSpeechSynthesisVoice?
     private var warmUpState = WarmUpState.idle
+    private var warmedVoiceIdentifier: String?
+    private var warmingVoiceIdentifier: String?
     private var warmUpContinuations: [CheckedContinuation<Void, Never>] = []
     private var warmUpTimeoutTask: Task<Void, Never>?
 
     override init() {
-        selectedVoice = Self.bestInstalledSpanishVoice()
         super.init()
         synthesizer.delegate = self
     }
@@ -26,14 +26,11 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     func prepareForCounting() async {
-        switch warmUpState {
-        case .ready:
+        if isSelectedVoiceWarm {
             return
-        case .idle:
-            startWarmUpIfNeeded()
-        case .warming:
-            break
         }
+
+        startWarmUpIfNeeded()
 
         await withCheckedContinuation { continuation in
             warmUpContinuations.append(continuation)
@@ -63,9 +60,11 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     private func startWarmUpIfNeeded() {
-        guard warmUpState == .idle else { return }
+        guard !isSelectedVoiceWarm else { return }
+        guard warmUpState != .warming else { return }
 
         warmUpState = .warming
+        warmingVoiceIdentifier = selectedVoice?.identifier
 
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
         utterance.volume = 0
@@ -88,6 +87,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         warmUpTimeoutTask?.cancel()
         warmUpTimeoutTask = nil
         warmUpState = .ready
+        warmedVoiceIdentifier = warmingVoiceIdentifier
+        warmingVoiceIdentifier = nil
 
         let continuations = warmUpContinuations
         warmUpContinuations.removeAll()
@@ -105,45 +106,12 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         return utterance
     }
 
-    private static func bestInstalledSpanishVoice() -> AVSpeechSynthesisVoice? {
-        let spanishVoices = AVSpeechSynthesisVoice.speechVoices().filter {
-            $0.language.lowercased().hasPrefix("es")
-        }
-
-        return spanishVoices.max { lhs, rhs in
-            isVoice(lhs, lowerPriorityThan: rhs)
-        } ?? AVSpeechSynthesisVoice(language: "es-ES")
-            ?? AVSpeechSynthesisVoice(language: "es-MX")
-            ?? AVSpeechSynthesisVoice(language: "es-US")
+    private var selectedVoice: AVSpeechSynthesisVoice? {
+        SpanishVoicePreference.selectedVoice()
     }
 
-    private static func isVoice(_ lhs: AVSpeechSynthesisVoice, lowerPriorityThan rhs: AVSpeechSynthesisVoice) -> Bool {
-        let lhsQuality = lhs.quality.rawValue
-        let rhsQuality = rhs.quality.rawValue
-        if lhsQuality != rhsQuality {
-            return lhsQuality < rhsQuality
-        }
-
-        let lhsLocale = localeRank(for: lhs.language)
-        let rhsLocale = localeRank(for: rhs.language)
-        if lhsLocale != rhsLocale {
-            return lhsLocale < rhsLocale
-        }
-
-        return lhs.identifier > rhs.identifier
-    }
-
-    private static func localeRank(for language: String) -> Int {
-        switch language {
-        case "es-ES":
-            return 3
-        case "es-MX":
-            return 2
-        case "es-US":
-            return 1
-        default:
-            return 0
-        }
+    private var isSelectedVoiceWarm: Bool {
+        warmUpState == .ready && warmedVoiceIdentifier == selectedVoice?.identifier
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {

@@ -4,6 +4,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var counter = ToothCountingViewModel()
     @StateObject private var commands = SpeechCommandCenter()
+    @State private var isShowingVoiceSettings = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -51,6 +52,15 @@ struct ContentView: View {
                     .buttonBorderShape(.roundedRectangle(radius: 8))
                     .tint(counter.isRunning ? .red : .teal)
                     .accessibilityLabel(counter.isRunning ? "Alto" : "Vamos")
+
+                    if !counter.isCounting {
+                        Button("Voice") {
+                            isShowingVoiceSettings = true
+                        }
+                        .font(.system(size: voiceLinkFontSize(in: proxy.size), weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color(.secondaryLabel))
+                        .padding(.top, 16)
+                    }
                 }
                 .padding(.horizontal, horizontalPadding(in: proxy.size))
                 .padding(.bottom, max(24, proxy.safeAreaInsets.bottom + 16))
@@ -76,6 +86,11 @@ struct ContentView: View {
             @unknown default:
                 break
             }
+        }
+        .sheet(isPresented: $isShowingVoiceSettings, onDismiss: {
+            counter.prepareSpeech()
+        }) {
+            VoiceSettingsView()
         }
     }
 
@@ -104,6 +119,10 @@ struct ContentView: View {
 
     private func buttonHeight(in size: CGSize) -> CGFloat {
         min(max(size.height * 0.09, 64), 92)
+    }
+
+    private func voiceLinkFontSize(in size: CGSize) -> CGFloat {
+        min(max(size.width * 0.045, 18), 24)
     }
 
     private func horizontalPadding(in size: CGSize) -> CGFloat {
