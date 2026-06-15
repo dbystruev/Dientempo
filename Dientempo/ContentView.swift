@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var counter = ToothCountingViewModel()
     @StateObject private var commands = SpeechCommandCenter()
 
@@ -58,18 +59,34 @@ struct ContentView: View {
         }
         .onAppear {
             counter.prepareSpeech()
-            commands.start { command in
-                switch command {
-                case .start:
-                    counter.start()
-                case .stop:
-                    counter.stop()
-                }
-            }
+            startListeningForCommands()
         }
         .onDisappear {
             commands.stop()
             counter.stop()
+        }
+        .onChange(of: scenePhase) { phase in
+            switch phase {
+            case .active:
+                counter.resumeAfterInterruption()
+                startListeningForCommands()
+            case .inactive, .background:
+                commands.stop()
+                counter.pauseForInterruption()
+            @unknown default:
+                break
+            }
+        }
+    }
+
+    private func startListeningForCommands() {
+        commands.start { command in
+            switch command {
+            case .start:
+                counter.start()
+            case .stop:
+                counter.stop()
+            }
         }
     }
 

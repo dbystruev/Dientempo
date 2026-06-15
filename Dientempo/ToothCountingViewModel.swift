@@ -5,6 +5,7 @@ final class ToothCountingViewModel: ObservableObject {
     enum SessionState {
         case ready
         case running
+        case paused
         case finished
     }
 
@@ -21,6 +22,10 @@ final class ToothCountingViewModel: ObservableObject {
         state == .running
     }
 
+    var isCounting: Bool {
+        state == .running || state == .paused
+    }
+
     var currentWords: String {
         SpanishNumberFormatter.words(for: currentNumber)
     }
@@ -32,8 +37,35 @@ final class ToothCountingViewModel: ObservableObject {
     func start() {
         guard !isRunning else { return }
 
-        countingTask?.cancel()
         currentNumber = 0
+        startCounting(from: currentNumber)
+    }
+
+    func pauseForInterruption() {
+        guard isRunning else { return }
+
+        countingTask?.cancel()
+        countingTask = nil
+        speaker.stop()
+        state = .paused
+    }
+
+    func resumeAfterInterruption() {
+        guard state == .paused else { return }
+
+        startCounting(from: currentNumber)
+    }
+
+    func stop() {
+        countingTask?.cancel()
+        countingTask = nil
+        speaker.stop()
+        currentNumber = 0
+        state = .ready
+    }
+
+    private func startCounting(from firstNumber: Int) {
+        countingTask?.cancel()
         state = .running
 
         countingTask = Task { [weak self] in
@@ -44,13 +76,14 @@ final class ToothCountingViewModel: ObservableObject {
 
             let startTime = clock.now
 
-            for number in 0...Self.targetNumber {
+            for number in firstNumber...Self.targetNumber {
                 guard !Task.isCancelled else { return }
 
                 currentNumber = number
                 speaker.speak(number: number)
 
-                let nextDeadline = startTime.advanced(by: .seconds(number + 1))
+                let elapsedCount = number - firstNumber + 1
+                let nextDeadline = startTime.advanced(by: .seconds(elapsedCount))
 
                 do {
                     try await clock.sleep(until: nextDeadline, tolerance: .milliseconds(2))
@@ -62,14 +95,6 @@ final class ToothCountingViewModel: ObservableObject {
             guard !Task.isCancelled else { return }
             finish()
         }
-    }
-
-    func stop() {
-        countingTask?.cancel()
-        countingTask = nil
-        speaker.stop()
-        currentNumber = 0
-        state = .ready
     }
 
     private func finish() {

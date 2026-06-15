@@ -19,6 +19,8 @@ final class SpeechCommandCenter: ObservableObject {
 
     func start(commandHandler: @escaping (SpeechCommand) -> Void) {
         self.commandHandler = commandHandler
+        guard !shouldListen else { return }
+
         shouldListen = true
 
         SFSpeechRecognizer.requestAuthorization { [weak self] speechStatus in
