@@ -1,0 +1,515 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3B8B436340CAC7D6872D1790 /* SpanishNumberSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B488F5766E2D67FA7933E9C /* SpanishNumberSpeaker.swift */; };
+		3C892D9B62BD612BE9F90BF0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC661758D9F811FBB30124D4 /* Assets.xcassets */; };
+		42D7A17BB38F89F7AF74F281 /* SpeechCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */; };
+		5C83265B8E3970FA6635A8C8 /* DientempoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FE1BAD68399702E4278DD0 /* DientempoApp.swift */; };
+		8E4AF3071ED9139D3EDD001B /* SpanishNumberFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */; };
+		BFD0BE7E1DB4D8C4D0CEACE2 /* ToothCountingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */; };
+		C7691E79840E4796BCE4D964 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3273CCD5C636620F7110C5F5 /* Foundation.framework */; };
+		CA3D39FF43D0ECB6C4CC0812 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3273CCD5C636620F7110C5F5 /* Foundation.framework */; };
+		E52F1EE3C1D6F4D5C768F9A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA8681C06C455F4AD255279 /* ContentView.swift */; };
+		FAC48CAA1A82CAC4073EDFBE /* SpanishNumberFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB982B9C76AF0CFD46706F3 /* SpanishNumberFormatterTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		EAEAE2D3FE2878C3A1342229 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 575A5A70D78A9AF9C9C8C2AC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75D81A1F13F99BBC3D4E0CC3;
+			remoteInfo = Dientempo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1027C65C99ACF07D9F51BD2E /* DientempoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DientempoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2B488F5766E2D67FA7933E9C /* SpanishNumberSpeaker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpanishNumberSpeaker.swift; sourceTree = "<group>"; };
+		2FA8681C06C455F4AD255279 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3273CCD5C636620F7110C5F5 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		3DFB91AD2C50CCF3ADDED442 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ToothCountingViewModel.swift; sourceTree = "<group>"; };
+		4C688140D62D4A1D475F3597 /* Dientempo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dientempo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechCommandCenter.swift; sourceTree = "<group>"; };
+		53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpanishNumberFormatter.swift; sourceTree = "<group>"; };
+		86FE1BAD68399702E4278DD0 /* DientempoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DientempoApp.swift; sourceTree = "<group>"; };
+		FC661758D9F811FBB30124D4 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FDB982B9C76AF0CFD46706F3 /* SpanishNumberFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpanishNumberFormatterTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4A2C6131F8CD5F5563AB52AC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7691E79840E4796BCE4D964 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		873731C7E3F44070F95EE673 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA3D39FF43D0ECB6C4CC0812 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2A5AEB8907C648DF9DCAA520 /* Dientempo */ = {
+			isa = PBXGroup;
+			children = (
+				86FE1BAD68399702E4278DD0 /* DientempoApp.swift */,
+				2FA8681C06C455F4AD255279 /* ContentView.swift */,
+				4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */,
+				53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */,
+				2B488F5766E2D67FA7933E9C /* SpanishNumberSpeaker.swift */,
+				5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */,
+				FC661758D9F811FBB30124D4 /* Assets.xcassets */,
+				3DFB91AD2C50CCF3ADDED442 /* Info.plist */,
+			);
+			name = Dientempo;
+			path = Dientempo;
+			sourceTree = "<group>";
+		};
+		2B7E30F13800916A5EA44C64 = {
+			isa = PBXGroup;
+			children = (
+				34CE3BDB9CD0BC4E578E1CE6 /* Products */,
+				A425D0EE5898CB566217D3BF /* Frameworks */,
+				2A5AEB8907C648DF9DCAA520 /* Dientempo */,
+				62D88D12B260EA90AEC63FD9 /* DientempoTests */,
+			);
+			sourceTree = "<group>";
+		};
+		34CE3BDB9CD0BC4E578E1CE6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4C688140D62D4A1D475F3597 /* Dientempo.app */,
+				1027C65C99ACF07D9F51BD2E /* DientempoTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		62D88D12B260EA90AEC63FD9 /* DientempoTests */ = {
+			isa = PBXGroup;
+			children = (
+				FDB982B9C76AF0CFD46706F3 /* SpanishNumberFormatterTests.swift */,
+			);
+			name = DientempoTests;
+			path = DientempoTests;
+			sourceTree = "<group>";
+		};
+		A425D0EE5898CB566217D3BF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EDB0BAD95922EB7C48C0D4C4 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		EDB0BAD95922EB7C48C0D4C4 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				3273CCD5C636620F7110C5F5 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		75D81A1F13F99BBC3D4E0CC3 /* Dientempo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4AE53041FBEA3CB23AF63357 /* Build configuration list for PBXNativeTarget "Dientempo" */;
+			buildPhases = (
+				3201533D5495A56F5DC53DF8 /* Sources */,
+				873731C7E3F44070F95EE673 /* Frameworks */,
+				9BED000D9CFD16B49340DEB8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Dientempo;
+			productName = Dientempo;
+			productReference = 4C688140D62D4A1D475F3597 /* Dientempo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C882DE642A2A2CB9E1C9DFD1 /* DientempoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6D3CA91287FF55ECEC385376 /* Build configuration list for PBXNativeTarget "DientempoTests" */;
+			buildPhases = (
+				B262B397A81DBBB5E39E437A /* Sources */,
+				4A2C6131F8CD5F5563AB52AC /* Frameworks */,
+				FF07A20A0A31D9D1B4645503 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				41587383DB90D7A0390C21A5 /* PBXTargetDependency */,
+			);
+			name = DientempoTests;
+			productName = DientempoTests;
+			productReference = 1027C65C99ACF07D9F51BD2E /* DientempoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		575A5A70D78A9AF9C9C8C2AC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					75D81A1F13F99BBC3D4E0CC3 = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					C882DE642A2A2CB9E1C9DFD1 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 75D81A1F13F99BBC3D4E0CC3;
+					};
+				};
+			};
+			buildConfigurationList = 767649EDE7A23960F931CAD3 /* Build configuration list for PBXProject "Dientempo" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2B7E30F13800916A5EA44C64;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 34CE3BDB9CD0BC4E578E1CE6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				75D81A1F13F99BBC3D4E0CC3 /* Dientempo */,
+				C882DE642A2A2CB9E1C9DFD1 /* DientempoTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9BED000D9CFD16B49340DEB8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C892D9B62BD612BE9F90BF0 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF07A20A0A31D9D1B4645503 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3201533D5495A56F5DC53DF8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5C83265B8E3970FA6635A8C8 /* DientempoApp.swift in Sources */,
+				E52F1EE3C1D6F4D5C768F9A2 /* ContentView.swift in Sources */,
+				BFD0BE7E1DB4D8C4D0CEACE2 /* ToothCountingViewModel.swift in Sources */,
+				8E4AF3071ED9139D3EDD001B /* SpanishNumberFormatter.swift in Sources */,
+				3B8B436340CAC7D6872D1790 /* SpanishNumberSpeaker.swift in Sources */,
+				42D7A17BB38F89F7AF74F281 /* SpeechCommandCenter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B262B397A81DBBB5E39E437A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAC48CAA1A82CAC4073EDFBE /* SpanishNumberFormatterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		41587383DB90D7A0390C21A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Dientempo;
+			target = 75D81A1F13F99BBC3D4E0CC3 /* Dientempo */;
+			targetProxy = EAEAE2D3FE2878C3A1342229 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		29B362B129DE711B368AF792 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_NS_ASSERTIONS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3D4CC9A5FB5650B37BC227BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4490BE643EDB885AF2D4AF17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dbystruev.dientempo.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dientempo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dientempo";
+			};
+			name = Debug;
+		};
+		8BCD18C2D9B608BF6915B4D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Dientempo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dbystruev.dientempo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C217D3DC807356B7F4AA83F1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dbystruev.dientempo.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dientempo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dientempo";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EDB56A40B769A272C7FF5FE9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Dientempo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dbystruev.dientempo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4AE53041FBEA3CB23AF63357 /* Build configuration list for PBXNativeTarget "Dientempo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8BCD18C2D9B608BF6915B4D2 /* Release */,
+				EDB56A40B769A272C7FF5FE9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6D3CA91287FF55ECEC385376 /* Build configuration list for PBXNativeTarget "DientempoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C217D3DC807356B7F4AA83F1 /* Release */,
+				4490BE643EDB885AF2D4AF17 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		767649EDE7A23960F931CAD3 /* Build configuration list for PBXProject "Dientempo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				29B362B129DE711B368AF792 /* Debug */,
+				3D4CC9A5FB5650B37BC227BC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 575A5A70D78A9AF9C9C8C2AC /* Project object */;
+}
