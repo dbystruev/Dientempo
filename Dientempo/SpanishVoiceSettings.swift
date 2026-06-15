@@ -96,7 +96,7 @@ struct VoiceSettingsView: View {
                     )
                 }
             }
-            .navigationTitle("Voz")
+            .navigationTitle("Voice / Voz")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
