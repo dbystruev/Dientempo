@@ -74,6 +74,9 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
         warmUpState = .warming
         warmingVoiceIdentifier = selectedVoice?.identifier
+        #if DEBUG
+        debugAudio(SpanishVoicePreference.debugSelectionSummary())
+        #endif
         debugAudio("Speaker warm-up starting voice=\(warmingVoiceIdentifier ?? "none")")
 
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
@@ -169,9 +172,9 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         }
     }
 
-    private func debugAudio(_ message: String) {
+    private func debugAudio(_ message: @autoclosure () -> String) {
         #if DEBUG
-        NSLog("[DientempoAudio] %@", message)
+        NSLog("[DientempoAudio] %@", message())
         #endif
     }
 }

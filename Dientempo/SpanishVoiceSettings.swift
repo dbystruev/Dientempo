@@ -40,6 +40,20 @@ enum SpanishVoicePreference {
         .joined(separator: " - ")
     }
 
+    #if DEBUG
+    static func debugSelectionSummary() -> String {
+        let selectedIdentifier = UserDefaults.standard.string(forKey: selectedVoiceIdentifierKey) ?? automaticIdentifier
+        let selectedVoiceDescription = selectedVoice().map(debugDescription) ?? "none"
+        let installedVoiceDescriptions = sortedInstalledVoices.map(debugDescription).joined(separator: " | ")
+
+        return "Voice preference=\(selectedIdentifier) selected=\(selectedVoiceDescription) installedSpanishVoices=\(installedVoiceDescriptions.isEmpty ? "none" : installedVoiceDescriptions)"
+    }
+
+    private static func debugDescription(for voice: AVSpeechSynthesisVoice) -> String {
+        "\(voice.name) \(description(for: voice)) id=\(voice.identifier)"
+    }
+    #endif
+
     private static func qualityName(for quality: AVSpeechSynthesisVoiceQuality) -> String {
         switch quality {
         case .premium:

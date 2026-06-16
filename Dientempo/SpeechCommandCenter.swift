@@ -260,9 +260,9 @@ final class SpeechCommandCenter: ObservableObject {
         return words.contains { tokens.contains($0) }
     }
 
-    private static func debugAudio(_ message: String) {
+    private static func debugAudio(_ message: @autoclosure () -> String) {
         #if DEBUG
-        NSLog("[DientempoAudio] %@", message)
+        NSLog("[DientempoAudio] %@", message())
         #endif
     }
 }
