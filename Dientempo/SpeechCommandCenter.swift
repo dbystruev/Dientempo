@@ -10,7 +10,6 @@ enum SpeechCommand {
 
 final class SpeechCommandCenter: ObservableObject {
     private let audioEngine = AVAudioEngine()
-    private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-ES"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var commandHandler: ((SpeechCommand) -> Void)?
@@ -19,10 +18,10 @@ final class SpeechCommandCenter: ObservableObject {
     private var lastCommandDate = Date.distantPast
 
     func start(commandHandler: @escaping (SpeechCommand) -> Void) {
-        Self.debugAudio("SpeechCommandCenter.start")
         self.commandHandler = commandHandler
         guard !shouldListen else { return }
 
+        Self.debugAudio("SpeechCommandCenter.start")
         shouldListen = true
 
         SFSpeechRecognizer.requestAuthorization { [weak self] speechStatus in
@@ -54,19 +53,22 @@ final class SpeechCommandCenter: ObservableObject {
 
     private func beginRecognition() {
         guard shouldListen, recognitionTask == nil else { return }
-        guard let recognizer, recognizer.isAvailable else {
-            Self.debugAudio("Speech recognizer unavailable; scheduling restart")
-            scheduleRestart()
-            return
-        }
-        guard recognizer.supportsOnDeviceRecognition else {
-            Self.debugAudio("On-device speech recognition unavailable")
-            shouldListen = false
-            return
-        }
 
+        switch Self.onDeviceRecognizer() {
+        case let .ready(recognizer):
+            startRecognition(with: recognizer)
+        case .temporarilyUnavailable:
+            Self.debugAudio("On-device speech recognizer temporarily unavailable; scheduling restart")
+            scheduleRestart()
+        case .unsupported:
+            Self.debugAudio("No on-device speech recognizer available for \(Self.recognitionLocaleIdentifiers.joined(separator: ", "))")
+            shouldListen = false
+        }
+    }
+
+    private func startRecognition(with recognizer: SFSpeechRecognizer) {
         stopRecognition()
-        Self.debugAudio("Speech recognition starting")
+        Self.debugAudio("Speech recognition starting locale=\(recognizer.locale.identifier)")
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
@@ -162,6 +164,53 @@ final class SpeechCommandCenter: ObservableObject {
         }
     }
 
+    private static func onDeviceRecognizer() -> RecognizerSelection {
+        var hasTemporarilyUnavailableRecognizer = false
+
+        for identifier in recognitionLocaleIdentifiers {
+            guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) else {
+                debugAudio("Speech recognizer unavailable for locale=\(identifier)")
+                continue
+            }
+
+            guard recognizer.supportsOnDeviceRecognition else {
+                debugAudio("On-device speech recognition unsupported for locale=\(identifier)")
+                continue
+            }
+
+            guard recognizer.isAvailable else {
+                debugAudio("On-device speech recognition unavailable now for locale=\(identifier)")
+                hasTemporarilyUnavailableRecognizer = true
+                continue
+            }
+
+            return .ready(recognizer)
+        }
+
+        return hasTemporarilyUnavailableRecognizer ? .temporarilyUnavailable : .unsupported
+    }
+
+    private static var recognitionLocaleIdentifiers: [String] {
+        uniqueIdentifiers([
+            SpanishVoicePreference.selectedVoice()?.language,
+            "es-ES",
+            "es-MX",
+            "es-US",
+            "en-US"
+        ])
+    }
+
+    private static func uniqueIdentifiers(_ identifiers: [String?]) -> [String] {
+        var seenIdentifiers = Set<String>()
+
+        return identifiers.compactMap { identifier in
+            guard let identifier, !seenIdentifiers.contains(identifier) else { return nil }
+
+            seenIdentifiers.insert(identifier)
+            return identifier
+        }
+    }
+
     private func scheduleRestart() {
         guard shouldListen else { return }
 
@@ -216,6 +265,12 @@ final class SpeechCommandCenter: ObservableObject {
         NSLog("[DientempoAudio] %@", message)
         #endif
     }
+}
+
+private enum RecognizerSelection {
+    case ready(SFSpeechRecognizer)
+    case temporarilyUnavailable
+    case unsupported
 }
 
 private extension String {

@@ -31,7 +31,13 @@ enum SpanishVoicePreference {
     }
 
     static func description(for voice: AVSpeechSynthesisVoice) -> String {
-        "\(voice.language) - \(qualityName(for: voice.quality))"
+        [
+            voice.language,
+            qualityName(for: voice.quality),
+            compactnessName(for: voice.identifier)
+        ]
+        .compactMap { $0 }
+        .joined(separator: " - ")
     }
 
     private static func qualityName(for quality: AVSpeechSynthesisVoiceQuality) -> String {
@@ -52,6 +58,12 @@ enum SpanishVoicePreference {
             return lhsQuality > rhsQuality
         }
 
+        let lhsCompactness = compactnessRank(for: lhs.identifier)
+        let rhsCompactness = compactnessRank(for: rhs.identifier)
+        if lhsCompactness != rhsCompactness {
+            return lhsCompactness > rhsCompactness
+        }
+
         let lhsLocale = localeRank(for: lhs.language)
         let rhsLocale = localeRank(for: rhs.language)
         if lhsLocale != rhsLocale {
@@ -59,6 +71,34 @@ enum SpanishVoicePreference {
         }
 
         return lhs.name < rhs.name
+    }
+
+    private static func compactnessRank(for identifier: String) -> Int {
+        let lowercasedIdentifier = identifier.lowercased()
+
+        if lowercasedIdentifier.contains("super-compact") {
+            return 0
+        }
+
+        if lowercasedIdentifier.contains("compact") {
+            return 1
+        }
+
+        return 2
+    }
+
+    private static func compactnessName(for identifier: String) -> String? {
+        let lowercasedIdentifier = identifier.lowercased()
+
+        if lowercasedIdentifier.contains("super-compact") {
+            return "Super Compact"
+        }
+
+        if lowercasedIdentifier.contains("compact") {
+            return "Compact"
+        }
+
+        return nil
     }
 
     private static func localeRank(for language: String) -> Int {
