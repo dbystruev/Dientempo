@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -79,12 +80,17 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            updateIdleTimer()
             counter.prepareSpeech()
             startListeningForCommands()
         }
         .onDisappear {
+            allowIdleTimer()
             commands.stop()
             counter.stop()
+        }
+        .onChange(of: counter.isRunning) { _ in
+            updateIdleTimer()
         }
         .onChange(of: scenePhase) { phase in
             switch phase {
@@ -94,6 +100,7 @@ struct ContentView: View {
             case .inactive, .background:
                 commands.stop()
                 counter.pauseForInterruption()
+                allowIdleTimer()
             @unknown default:
                 break
             }
@@ -114,6 +121,14 @@ struct ContentView: View {
                 counter.stop()
             }
         }
+    }
+
+    private func updateIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = counter.isRunning
+    }
+
+    private func allowIdleTimer() {
+        UIApplication.shared.isIdleTimerDisabled = false
     }
 
     private var swipeGesture: some Gesture {
