@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreAudio
 import Foundation
 import Speech
 
@@ -94,7 +95,7 @@ final class SpeechCommandCenter: ObservableObject {
             inputNode.removeTap(onBus: 0)
             let format = inputNode.outputFormat(forBus: 0)
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak request] buffer, _ in
-                guard buffer.frameLength > 0 else { return }
+                guard buffer.frameLength > 0, Self.hasAudioData(in: buffer) else { return }
                 request?.append(buffer)
             }
 
@@ -132,6 +133,12 @@ final class SpeechCommandCenter: ObservableObject {
         recognitionRequest = nil
         recognitionTask?.cancel()
         recognitionTask = nil
+    }
+
+    private static func hasAudioData(in buffer: AVAudioPCMBuffer) -> Bool {
+        UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList).contains { audioBuffer in
+            audioBuffer.mData != nil && audioBuffer.mDataByteSize > 0
+        }
     }
 
     private func scheduleRestart() {
