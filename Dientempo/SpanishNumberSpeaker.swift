@@ -23,10 +23,13 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     }
 
     func prepare() {
+        debugAudio("Speaker prepare")
         startWarmUpIfNeeded()
     }
 
     func prepareForCounting(_ completion: @escaping () -> Void) {
+        debugAudio("Speaker prepareForCounting warm=\(isSelectedVoiceWarm)")
+
         if isSelectedVoiceWarm {
             completion()
             return
@@ -41,8 +44,10 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
         let words = SpanishNumberFormatter.words(for: number)
         let utterance = utterance(for: words)
+        debugAudio("Speaker speak number=\(number) words=\"\(words)\" wasSpeaking=\(synthesizer.isSpeaking)")
 
         if synthesizer.isSpeaking {
+            debugAudio("Speaker interrupt previous utterance before number=\(number)")
             synthesizer.stopSpeaking(at: .immediate)
         }
 
@@ -51,6 +56,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
     func stop() {
         guard synthesizer.isSpeaking else { return }
+        debugAudio("Speaker stop current utterance")
         synthesizer.stopSpeaking(at: .immediate)
     }
 
@@ -68,10 +74,17 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
         warmUpState = .warming
         warmingVoiceIdentifier = selectedVoice?.identifier
+        debugAudio("Speaker warm-up starting voice=\(warmingVoiceIdentifier ?? "none")")
 
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
-        utterance.volume = 0
-        synthesizer.speak(utterance)
+        // Render and discard one utterance to load the selected voice without audible warm-up.
+        synthesizer.write(utterance) { [weak self] buffer in
+            guard let pcmBuffer = buffer as? AVAudioPCMBuffer, pcmBuffer.frameLength == 0 else { return }
+
+            DispatchQueue.main.async {
+                self?.completeWarmUpIfNeeded()
+            }
+        }
 
         let timeoutWorkItem = DispatchWorkItem { [weak self] in
             self?.completeWarmUp()
@@ -93,6 +106,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         warmUpState = .ready
         warmedVoiceIdentifier = warmingVoiceIdentifier
         warmingVoiceIdentifier = nil
+        debugAudio("Speaker warm-up complete voice=\(warmedVoiceIdentifier ?? "none")")
 
         let completions = warmUpCompletions
         warmUpCompletions.removeAll()
@@ -120,7 +134,9 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
             try session.setActive(true)
             try session.overrideOutputAudioPort(.speaker)
             isSpeakerAudioSessionActive = true
+            debugAudio("Speaker audio session activated")
         } catch {
+            debugAudio("Speaker audio session activation failed: \(error)")
             // Speech should still be attempted if route setup fails.
         }
     }
@@ -133,15 +149,29 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         warmUpState == .ready && warmedVoiceIdentifier == selectedVoice?.identifier
     }
 
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        debugAudio("Speaker didStart utterance=\"\(utterance.speechString)\" volume=\(utterance.volume)")
+    }
+
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        debugAudio("Speaker didFinish utterance=\"\(utterance.speechString)\"")
+
         DispatchQueue.main.async { [weak self] in
             self?.completeWarmUpIfNeeded()
         }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        debugAudio("Speaker didCancel utterance=\"\(utterance.speechString)\"")
+
         DispatchQueue.main.async { [weak self] in
             self?.completeWarmUpIfNeeded()
         }
+    }
+
+    private func debugAudio(_ message: String) {
+        #if DEBUG
+        NSLog("[DientempoAudio] %@", message)
+        #endif
     }
 }

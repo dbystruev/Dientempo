@@ -19,6 +19,7 @@ final class SpeechCommandCenter: ObservableObject {
     private var lastCommandDate = Date.distantPast
 
     func start(commandHandler: @escaping (SpeechCommand) -> Void) {
+        Self.debugAudio("SpeechCommandCenter.start")
         self.commandHandler = commandHandler
         guard !shouldListen else { return }
 
@@ -38,6 +39,7 @@ final class SpeechCommandCenter: ObservableObject {
     }
 
     func stop() {
+        Self.debugAudio("SpeechCommandCenter.stop")
         shouldListen = false
         stopRecognition()
     }
@@ -53,15 +55,18 @@ final class SpeechCommandCenter: ObservableObject {
     private func beginRecognition() {
         guard shouldListen, recognitionTask == nil else { return }
         guard let recognizer, recognizer.isAvailable else {
+            Self.debugAudio("Speech recognizer unavailable; scheduling restart")
             scheduleRestart()
             return
         }
         guard recognizer.supportsOnDeviceRecognition else {
+            Self.debugAudio("On-device speech recognition unavailable")
             shouldListen = false
             return
         }
 
         stopRecognition()
+        Self.debugAudio("Speech recognition starting")
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
@@ -101,7 +106,9 @@ final class SpeechCommandCenter: ObservableObject {
 
             audioEngine.prepare()
             try audioEngine.start()
+            Self.debugAudio("Speech audio engine started")
         } catch {
+            Self.debugAudio("Speech recognition failed to start: \(error)")
             stopRecognition()
             scheduleRestart()
             return
@@ -115,6 +122,12 @@ final class SpeechCommandCenter: ObservableObject {
             }
 
             if error != nil || result?.isFinal == true {
+                if let error {
+                    Self.debugAudio("Speech recognition ended with error: \(error)")
+                } else {
+                    Self.debugAudio("Speech recognition ended")
+                }
+
                 DispatchQueue.main.async {
                     self.stopRecognition()
                     self.scheduleRestart()
@@ -124,6 +137,9 @@ final class SpeechCommandCenter: ObservableObject {
     }
 
     private func stopRecognition() {
+        guard audioEngine.isRunning || recognitionRequest != nil || recognitionTask != nil else { return }
+        Self.debugAudio("Speech recognition stopping")
+
         if audioEngine.isRunning {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
@@ -136,7 +152,12 @@ final class SpeechCommandCenter: ObservableObject {
     }
 
     private static func hasAudioData(in buffer: AVAudioPCMBuffer) -> Bool {
-        UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList).contains { audioBuffer in
+        guard buffer.frameLength > 0 else { return false }
+
+        let audioBuffers = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
+        guard !audioBuffers.isEmpty else { return false }
+
+        return audioBuffers.allSatisfy { audioBuffer in
             audioBuffer.mData != nil && audioBuffer.mDataByteSize > 0
         }
     }
@@ -188,6 +209,12 @@ final class SpeechCommandCenter: ObservableObject {
     private static func commandWords(_ words: [String], appearIn text: String) -> Bool {
         let tokens = Set(text.split(separator: " ").map(String.init))
         return words.contains { tokens.contains($0) }
+    }
+
+    private static func debugAudio(_ message: String) {
+        #if DEBUG
+        NSLog("[DientempoAudio] %@", message)
+        #endif
     }
 }
 
