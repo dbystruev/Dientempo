@@ -153,10 +153,25 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        if warmUpState == .warming {
+            debugAudio("Speaker warm-up render didStart word=\"\(utterance.speechString)\"")
+            return
+        }
+
         debugAudio("Speaker didStart utterance=\"\(utterance.speechString)\" volume=\(utterance.volume)")
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        if warmUpState == .warming {
+            debugAudio("Speaker warm-up render didFinish word=\"\(utterance.speechString)\"")
+
+            DispatchQueue.main.async { [weak self] in
+                self?.completeWarmUpIfNeeded()
+            }
+
+            return
+        }
+
         debugAudio("Speaker didFinish utterance=\"\(utterance.speechString)\"")
 
         DispatchQueue.main.async { [weak self] in
