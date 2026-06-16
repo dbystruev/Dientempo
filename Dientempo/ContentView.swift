@@ -27,7 +27,7 @@ struct ContentView: View {
                         .contentShape(Rectangle())
                         .accessibilityLabel(counter.currentWords)
                         .onTapGesture {
-                            counter.togglePause()
+                            togglePause()
                         }
                         .gesture(swipeGesture)
 
@@ -43,14 +43,14 @@ struct ContentView: View {
                         .contentShape(Rectangle())
                         .accessibilityHidden(true)
                         .onTapGesture {
-                            counter.togglePause()
+                            togglePause()
                         }
                         .gesture(swipeGesture)
 
                     Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.04))
 
                     Button {
-                        counter.isCounting ? counter.stop() : counter.start()
+                        startOrStopCounting()
                     } label: {
                         Text(counter.isCounting ? "Alto" : "Vamos")
                             .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
@@ -80,23 +80,22 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            updateIdleTimer()
             counter.prepareSpeech()
-            startListeningForCommands()
+            applyPowerPolicy()
         }
         .onDisappear {
             allowIdleTimer()
             commands.stop()
             counter.stop()
         }
-        .onChange(of: counter.isRunning) { _ in
-            updateIdleTimer()
+        .onChange(of: counter.state) { _ in
+            applyPowerPolicy()
         }
         .onChange(of: scenePhase) { phase in
             switch phase {
             case .active:
                 counter.resumeAfterInterruption()
-                startListeningForCommands()
+                applyPowerPolicy()
             case .inactive, .background:
                 commands.stop()
                 counter.pauseForInterruption()
@@ -112,6 +111,21 @@ struct ContentView: View {
         }
     }
 
+    private func startOrStopCounting() {
+        counter.isCounting ? counter.stop() : counter.start()
+        applyPowerPolicy()
+    }
+
+    private func togglePause() {
+        counter.togglePause()
+        applyPowerPolicy()
+    }
+
+    private func moveCounter(by offset: Int) {
+        counter.move(by: offset)
+        applyPowerPolicy()
+    }
+
     private func startListeningForCommands() {
         commands.start { command in
             switch command {
@@ -120,15 +134,33 @@ struct ContentView: View {
             case .stop:
                 counter.stop()
             }
+
+            applyPowerPolicy()
         }
     }
 
-    private func updateIdleTimer() {
-        UIApplication.shared.isIdleTimerDisabled = counter.isRunning
+    private func applyPowerPolicy() {
+        let shouldStayAwake = scenePhase == .active && counter.isRunning
+        UIApplication.shared.isIdleTimerDisabled = shouldStayAwake
+
+        if shouldStayAwake {
+            startListeningForCommands()
+        } else {
+            commands.stop()
+        }
+
+        debugPower("idleTimerDisabled=\(UIApplication.shared.isIdleTimerDisabled) state=\(counter.state)")
     }
 
     private func allowIdleTimer() {
         UIApplication.shared.isIdleTimerDisabled = false
+        debugPower("idleTimerDisabled=false")
+    }
+
+    private func debugPower(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        NSLog("[DientempoPower] %@", message())
+        #endif
     }
 
     private var swipeGesture: some Gesture {
@@ -136,7 +168,7 @@ struct ContentView: View {
             .onEnded { value in
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
 
-                counter.move(by: value.translation.width < 0 ? 1 : -1)
+                moveCounter(by: value.translation.width < 0 ? 1 : -1)
             }
     }
 

@@ -16,6 +16,7 @@ final class SpeechCommandCenter: ObservableObject {
     private var shouldListen = false
     private var lastTranscript = ""
     private var lastCommandDate = Date.distantPast
+    private var isRecognitionAudioSessionActive = false
 
     func start(commandHandler: @escaping (SpeechCommand) -> Void) {
         self.commandHandler = commandHandler
@@ -38,6 +39,8 @@ final class SpeechCommandCenter: ObservableObject {
     }
 
     func stop() {
+        guard shouldListen || audioEngine.isRunning || recognitionRequest != nil || recognitionTask != nil else { return }
+
         Self.debugAudio("SpeechCommandCenter.stop")
         shouldListen = false
         stopRecognition()
@@ -97,6 +100,7 @@ final class SpeechCommandCenter: ObservableObject {
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             try session.overrideOutputAudioPort(.speaker)
+            isRecognitionAudioSessionActive = true
 
             let inputNode = audioEngine.inputNode
             inputNode.removeTap(onBus: 0)
@@ -151,6 +155,19 @@ final class SpeechCommandCenter: ObservableObject {
         recognitionRequest = nil
         recognitionTask?.cancel()
         recognitionTask = nil
+        deactivateRecognitionAudioSession()
+    }
+
+    private func deactivateRecognitionAudioSession() {
+        guard isRecognitionAudioSessionActive else { return }
+
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            isRecognitionAudioSessionActive = false
+            Self.debugAudio("Speech recognition audio session deactivated")
+        } catch {
+            Self.debugAudio("Speech recognition audio session deactivation failed: \(error)")
+        }
     }
 
     private static func hasAudioData(in buffer: AVAudioPCMBuffer) -> Bool {

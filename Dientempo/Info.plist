@@ -23,9 +23,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Dientempo listens for start and stop commands while you brush.</string>
+	<string>Dientempo listens for stop commands while counting.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Dientempo uses on-device speech recognition for start and stop commands.</string>
+	<string>Dientempo uses on-device speech recognition for stop commands while counting.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

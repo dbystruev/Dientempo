@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 final class ToothCountingViewModel: ObservableObject {
-    enum SessionState {
+    enum SessionState: Equatable {
         case ready
         case running
         case paused
@@ -47,6 +47,7 @@ final class ToothCountingViewModel: ObservableObject {
         cancelCountingTimer()
         activeSessionID = UUID()
         speaker.stop()
+        speaker.releaseAudioSession()
         state = .paused
     }
 
@@ -60,6 +61,7 @@ final class ToothCountingViewModel: ObservableObject {
         cancelCountingTimer()
         activeSessionID = UUID()
         speaker.stop()
+        speaker.releaseAudioSession()
         currentNumber = 0
         state = .ready
     }
@@ -134,6 +136,7 @@ final class ToothCountingViewModel: ObservableObject {
     private func finish() {
         cancelCountingTimer()
         speaker.stop()
+        speaker.releaseAudioSession()
         currentNumber = Self.targetNumber
         state = .finished
     }
