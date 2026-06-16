@@ -1,24 +1,19 @@
 # TestFlight Notes
 
-Please test Dientempo as a simple brushing timer for learning Spanish numbers.
+Test Dientempo as a simple brushing timer for learning Spanish numbers.
 
 What to test in this build:
 
-- Start counting with **Vamos** and confirm the app counts from 0 to 200.
-- Listen for clear Spanish pronunciation, especially the first few numbers.
-- Confirm each displayed digit matches the Spanish words and spoken number.
-- Try stopping with **Alto** before the count finishes.
-- Try the **Voz** setting before or after counting and select an installed Spanish voice.
-- Tap the digit or Spanish words to pause/resume, then swipe left/right on them to move between nearby numbers.
-- Switch away from the app while counting, then return and confirm it resumes from the same number.
-- Pause counting, switch away from the app, then return and confirm it stays paused.
-- Try light mode and dark mode.
+- Start with **Vamos** or by tapping the number area. Confirm it counts 0 through 200, showing digits, Spanish words, and spoken Spanish.
+- Listen especially to the first few numbers and report any clipping, silence, or unnatural pronunciation.
+- While counting, tap the digit or words to pause; tap again to resume from the same number.
+- Swipe left/right on the digit or words to move one number higher/lower. It should stay within 0...200 and continue counting.
+- Stop with **Alto** before the end, then start again and confirm it restarts from 0.
+- Open **Voz** before or after counting, select another installed Spanish voice, and confirm the next run uses it.
+- Send the app to the background while counting, then return. It should resume from the interrupted number.
+- Pause first, then background and return. It should stay paused.
+- Confirm auto-lock works while stopped or paused, and the screen stays awake only while actively counting. Test this without Xcode attached.
+- Try light and dark mode.
 - If comfortable, try stop voice commands while counting, such as "stop", "alto", "para", or "detente".
-- Confirm the screen is allowed to auto-lock while stopped or paused, and stays awake only while actively counting.
 
-Please report:
-
-- Any number that sounds wrong, is clipped, or is hard to understand.
-- Any mismatch between the digit, Spanish text, and spoken audio.
-- Any timing problem where the count seems too fast, too slow, or skips.
-- Any issue with permissions, voice selection, auto-lock, background resume, or dark/light appearance.
+Please report any mismatch between digit, Spanish text, and speech; timing that feels wrong; voice or permission issues; auto-lock problems; background resume issues; or layout problems.
