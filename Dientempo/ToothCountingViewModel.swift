@@ -64,6 +64,27 @@ final class ToothCountingViewModel: ObservableObject {
         state = .ready
     }
 
+    func togglePause() {
+        switch state {
+        case .running:
+            pauseForInterruption()
+        case .paused:
+            resumeAfterInterruption()
+        case .ready, .finished:
+            break
+        }
+    }
+
+    func move(by offset: Int) {
+        guard offset != 0 else { return }
+
+        let nextNumber = min(Self.targetNumber, max(0, currentNumber + offset))
+        guard nextNumber != currentNumber else { return }
+
+        currentNumber = nextNumber
+        startCounting(from: nextNumber)
+    }
+
     private func startCounting(from firstNumber: Int) {
         countingTask?.cancel()
         state = .running

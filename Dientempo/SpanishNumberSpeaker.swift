@@ -19,6 +19,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     override init() {
         super.init()
         synthesizer.delegate = self
+        synthesizer.usesApplicationAudioSession = true
     }
 
     func prepare() {
@@ -38,6 +39,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     func speak(number: Int) {
+        activateSpeakerAudioSession()
+
         let words = SpanishNumberFormatter.words(for: number)
         let utterance = utterance(for: words)
 
@@ -62,6 +65,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     private func startWarmUpIfNeeded() {
         guard !isSelectedVoiceWarm else { return }
         guard warmUpState != .warming else { return }
+
+        activateSpeakerAudioSession()
 
         warmUpState = .warming
         warmingVoiceIdentifier = selectedVoice?.identifier
@@ -104,6 +109,18 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         utterance.preUtteranceDelay = 0
         utterance.postUtteranceDelay = 0
         return utterance
+    }
+
+    private func activateSpeakerAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
+            try session.setActive(true)
+            try session.overrideOutputAudioPort(.speaker)
+        } catch {
+            // Speech should still be attempted if route setup fails.
+        }
     }
 
     private var selectedVoice: AVSpeechSynthesisVoice? {

@@ -86,8 +86,9 @@ final class SpeechCommandCenter: ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
+            try session.overrideOutputAudioPort(.speaker)
 
             let inputNode = audioEngine.inputNode
             inputNode.removeTap(onBus: 0)

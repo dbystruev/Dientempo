@@ -8,7 +8,8 @@ What to test in this build:
 - Listen for clear Spanish pronunciation, especially the first few numbers.
 - Confirm each displayed digit matches the Spanish words and spoken number.
 - Try stopping with **Alto** before the count finishes.
-- Try the **Voice / Voz** setting before or after counting and select an installed Spanish voice.
+- Try the **Voz** setting before or after counting and select an installed Spanish voice.
+- Tap the digit or Spanish words to pause/resume, then swipe left/right on them to move between nearby numbers.
 - Switch away from the app while counting, then return and confirm it resumes from the same number.
 - Try light mode and dark mode.
 - If comfortable, try voice commands such as "go", "vamos", "stop", "alto", "para", or "detente".
