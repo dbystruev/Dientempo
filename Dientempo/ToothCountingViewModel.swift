@@ -72,7 +72,9 @@ final class ToothCountingViewModel: ObservableObject {
             pauseForInterruption()
         case .paused:
             resumeAfterInterruption()
-        case .ready, .finished:
+        case .ready:
+            startCounting(from: currentNumber)
+        case .finished:
             break
         }
     }
