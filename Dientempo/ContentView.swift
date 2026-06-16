@@ -6,6 +6,7 @@ struct ContentView: View {
     @StateObject private var counter = ToothCountingViewModel()
     @StateObject private var commands = SpeechCommandCenter()
     @State private var isShowingVoiceSettings = false
+    @State private var shouldResumeAfterSceneInterruption = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -80,10 +81,10 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            counter.prepareSpeech()
             applyPowerPolicy()
         }
         .onDisappear {
+            shouldResumeAfterSceneInterruption = false
             allowIdleTimer()
             commands.stop()
             counter.stop()
@@ -94,34 +95,42 @@ struct ContentView: View {
         .onChange(of: scenePhase) { phase in
             switch phase {
             case .active:
-                counter.resumeAfterInterruption()
+                if shouldResumeAfterSceneInterruption {
+                    counter.resumeAfterInterruption()
+                }
+
+                shouldResumeAfterSceneInterruption = false
                 applyPowerPolicy()
             case .inactive, .background:
                 commands.stop()
-                counter.pauseForInterruption()
+                if counter.isRunning {
+                    shouldResumeAfterSceneInterruption = true
+                    counter.pauseForInterruption()
+                }
                 allowIdleTimer()
             @unknown default:
                 break
             }
         }
-        .sheet(isPresented: $isShowingVoiceSettings, onDismiss: {
-            counter.prepareSpeech()
-        }) {
+        .sheet(isPresented: $isShowingVoiceSettings) {
             VoiceSettingsView()
         }
     }
 
     private func startOrStopCounting() {
+        shouldResumeAfterSceneInterruption = false
         counter.isCounting ? counter.stop() : counter.start()
         applyPowerPolicy()
     }
 
     private func togglePause() {
+        shouldResumeAfterSceneInterruption = false
         counter.togglePause()
         applyPowerPolicy()
     }
 
     private func moveCounter(by offset: Int) {
+        shouldResumeAfterSceneInterruption = false
         counter.move(by: offset)
         applyPowerPolicy()
     }
@@ -132,6 +141,7 @@ struct ContentView: View {
             case .start:
                 counter.start()
             case .stop:
+                shouldResumeAfterSceneInterruption = false
                 counter.stop()
             }
 

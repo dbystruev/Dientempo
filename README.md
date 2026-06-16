@@ -15,7 +15,7 @@ During counting, tap the digit or Spanish words to pause or resume. Swipe left o
 Counting is offline-first:
 
 - Spanish number words are generated locally.
-- Speech uses `AVSpeechSynthesizer`, warms the selected Spanish voice on launch, and picks the highest-quality installed Spanish voice.
+- Speech uses `AVSpeechSynthesizer`, warms the selected Spanish voice before counting starts, and picks the highest-quality installed Spanish voice.
 - Spoken stop commands request on-device speech recognition with `requiresOnDeviceRecognition` only while counting, so iOS can auto-lock while stopped or paused.
 - Timer progression is based on elapsed monotonic time, not on speech completion, so the 0...200 session lasts exactly 201 seconds.
 - If the app is interrupted or sent to the background while counting, it pauses and resumes from the same number when active again.

@@ -11,6 +11,7 @@ What to test in this build:
 - Try the **Voz** setting before or after counting and select an installed Spanish voice.
 - Tap the digit or Spanish words to pause/resume, then swipe left/right on them to move between nearby numbers.
 - Switch away from the app while counting, then return and confirm it resumes from the same number.
+- Pause counting, switch away from the app, then return and confirm it stays paused.
 - Try light mode and dark mode.
 - If comfortable, try stop voice commands while counting, such as "stop", "alto", "para", or "detente".
 - Confirm the screen is allowed to auto-lock while stopped or paused, and stays awake only while actively counting.
