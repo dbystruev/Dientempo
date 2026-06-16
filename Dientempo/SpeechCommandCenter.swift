@@ -94,6 +94,7 @@ final class SpeechCommandCenter: ObservableObject {
             inputNode.removeTap(onBus: 0)
             let format = inputNode.outputFormat(forBus: 0)
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak request] buffer, _ in
+                guard buffer.frameLength > 0 else { return }
                 request?.append(buffer)
             }
 

@@ -1,8 +1,7 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 
-@MainActor
-final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
+final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchecked Sendable {
     private enum WarmUpState {
         case idle
         case warming
@@ -13,8 +12,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     private var warmUpState = WarmUpState.idle
     private var warmedVoiceIdentifier: String?
     private var warmingVoiceIdentifier: String?
-    private var warmUpContinuations: [CheckedContinuation<Void, Never>] = []
-    private var warmUpTimeoutTask: Task<Void, Never>?
+    private var warmUpCompletions: [() -> Void] = []
+    private var warmUpTimeoutWorkItem: DispatchWorkItem?
     private var isSpeakerAudioSessionActive = false
 
     override init() {
@@ -27,16 +26,14 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         startWarmUpIfNeeded()
     }
 
-    func prepareForCounting() async {
+    func prepareForCounting(_ completion: @escaping () -> Void) {
         if isSelectedVoiceWarm {
+            completion()
             return
         }
 
+        warmUpCompletions.append(completion)
         startWarmUpIfNeeded()
-
-        await withCheckedContinuation { continuation in
-            warmUpContinuations.append(continuation)
-        }
     }
 
     func speak(number: Int) {
@@ -76,10 +73,11 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         utterance.volume = 0
         synthesizer.speak(utterance)
 
-        warmUpTimeoutTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(700))
+        let timeoutWorkItem = DispatchWorkItem { [weak self] in
             self?.completeWarmUp()
         }
+        warmUpTimeoutWorkItem = timeoutWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(700), execute: timeoutWorkItem)
     }
 
     private func completeWarmUpIfNeeded() {
@@ -90,15 +88,15 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
     private func completeWarmUp() {
         guard warmUpState != .ready else { return }
 
-        warmUpTimeoutTask?.cancel()
-        warmUpTimeoutTask = nil
+        warmUpTimeoutWorkItem?.cancel()
+        warmUpTimeoutWorkItem = nil
         warmUpState = .ready
         warmedVoiceIdentifier = warmingVoiceIdentifier
         warmingVoiceIdentifier = nil
 
-        let continuations = warmUpContinuations
-        warmUpContinuations.removeAll()
-        continuations.forEach { $0.resume() }
+        let completions = warmUpCompletions
+        warmUpCompletions.removeAll()
+        completions.forEach { $0() }
     }
 
     private func utterance(for words: String) -> AVSpeechUtterance {
@@ -135,14 +133,14 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         warmUpState == .ready && warmedVoiceIdentifier == selectedVoice?.identifier
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor [weak self] in
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        DispatchQueue.main.async { [weak self] in
             self?.completeWarmUpIfNeeded()
         }
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor [weak self] in
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        DispatchQueue.main.async { [weak self] in
             self?.completeWarmUpIfNeeded()
         }
     }

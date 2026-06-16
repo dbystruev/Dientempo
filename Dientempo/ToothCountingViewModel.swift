@@ -15,8 +15,8 @@ final class ToothCountingViewModel: ObservableObject {
     @Published private(set) var state: SessionState = .ready
 
     private let speaker = SpanishNumberSpeaker()
-    private let clock = ContinuousClock()
-    private var countingTask: Task<Void, Never>?
+    private var countingTimer: DispatchSourceTimer?
+    private var activeSessionID = UUID()
 
     var isRunning: Bool {
         state == .running
@@ -44,8 +44,8 @@ final class ToothCountingViewModel: ObservableObject {
     func pauseForInterruption() {
         guard isRunning else { return }
 
-        countingTask?.cancel()
-        countingTask = nil
+        cancelCountingTimer()
+        activeSessionID = UUID()
         speaker.stop()
         state = .paused
     }
@@ -57,8 +57,8 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     func stop() {
-        countingTask?.cancel()
-        countingTask = nil
+        cancelCountingTimer()
+        activeSessionID = UUID()
         speaker.stop()
         currentNumber = 0
         state = .ready
@@ -86,42 +86,61 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     private func startCounting(from firstNumber: Int) {
-        countingTask?.cancel()
+        cancelCountingTimer()
         state = .running
+        let sessionID = UUID()
+        activeSessionID = sessionID
 
-        countingTask = Task { [weak self] in
+        speaker.prepareForCounting { [weak self] in
             guard let self else { return }
-
-            await speaker.prepareForCounting()
-            guard !Task.isCancelled else { return }
-
-            let startTime = clock.now
-
-            for number in firstNumber...Self.targetNumber {
-                guard !Task.isCancelled else { return }
-
-                currentNumber = number
-                speaker.speak(number: number)
-
-                let elapsedCount = number - firstNumber + 1
-                let nextDeadline = startTime.advanced(by: .seconds(elapsedCount))
-
-                do {
-                    try await clock.sleep(until: nextDeadline, tolerance: .milliseconds(2))
-                } catch {
-                    return
-                }
-            }
-
-            guard !Task.isCancelled else { return }
-            finish()
+            self.beginCounting(from: firstNumber, sessionID: sessionID)
         }
     }
 
+    private func beginCounting(from firstNumber: Int, sessionID: UUID) {
+        guard state == .running, activeSessionID == sessionID else { return }
+
+        let startTime = DispatchTime.now()
+        announce(number: firstNumber)
+        scheduleNextTick(number: firstNumber + 1, firstNumber: firstNumber, startTime: startTime, sessionID: sessionID)
+    }
+
+    private func scheduleNextTick(number: Int, firstNumber: Int, startTime: DispatchTime, sessionID: UUID) {
+        guard state == .running, activeSessionID == sessionID else { return }
+
+        let elapsedCount = number - firstNumber
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: startTime + .seconds(elapsedCount), leeway: .milliseconds(2))
+        timer.setEventHandler { [weak self] in
+            guard let self, self.state == .running, self.activeSessionID == sessionID else { return }
+
+            if number <= Self.targetNumber {
+                self.announce(number: number)
+                self.scheduleNextTick(number: number + 1, firstNumber: firstNumber, startTime: startTime, sessionID: sessionID)
+            } else {
+                self.finish()
+            }
+        }
+
+        countingTimer = timer
+        timer.resume()
+    }
+
+    private func announce(number: Int) {
+        currentNumber = number
+        speaker.speak(number: number)
+    }
+
     private func finish() {
-        countingTask = nil
+        cancelCountingTimer()
         speaker.stop()
         currentNumber = Self.targetNumber
         state = .finished
+    }
+
+    private func cancelCountingTimer() {
+        countingTimer?.setEventHandler {}
+        countingTimer?.cancel()
+        countingTimer = nil
     }
 }
