@@ -16,6 +16,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private var warmUpTimeoutWorkItem: DispatchWorkItem?
     private var isSpeakerAudioSessionActive = false
     private var isRenderingWarmUp = false
+    private var pendingReplacementUtterance: AVSpeechUtterance?
 
     override init() {
         super.init()
@@ -30,6 +31,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
     func prepareForCounting(_ completion: @escaping () -> Void) {
         debugAudio("Speaker prepareForCounting warm=\(isSelectedVoiceWarm)")
+        activateSpeakerAudioSession()
 
         if isSelectedVoiceWarm {
             completion()
@@ -48,14 +50,18 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         debugAudio("Speaker speak number=\(number) words=\"\(words)\" wasSpeaking=\(synthesizer.isSpeaking)")
 
         if synthesizer.isSpeaking {
-            debugAudio("Speaker interrupt previous utterance before number=\(number)")
+            pendingReplacementUtterance = utterance
+            debugAudio("Speaker interrupt previous utterance before number=\(number); replacement pending")
             synthesizer.stopSpeaking(at: .immediate)
+            speakPendingReplacementIfIdle()
+            return
         }
 
         synthesizer.speak(utterance)
     }
 
     func stop() {
+        pendingReplacementUtterance = nil
         guard synthesizer.isSpeaking else { return }
         debugAudio("Speaker stop current utterance")
         synthesizer.stopSpeaking(at: .immediate)
@@ -70,6 +76,16 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
             debugAudio("Speaker audio session deactivated")
         } catch {
             debugAudio("Speaker audio session deactivation failed: \(error)")
+        }
+    }
+
+    private func speakPendingReplacementIfIdle() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.synthesizer.isSpeaking, let utterance = self.pendingReplacementUtterance else { return }
+
+            self.pendingReplacementUtterance = nil
+            self.debugAudio("Speaker speak pending replacement utterance=\"\(utterance.speechString)\"")
+            self.synthesizer.speak(utterance)
         }
     }
 
@@ -95,21 +111,30 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         // Render and discard one utterance to load the selected voice without audible warm-up.
         synthesizer.write(utterance) { [weak self] buffer in
             guard let pcmBuffer = buffer as? AVAudioPCMBuffer, pcmBuffer.frameLength == 0 else { return }
-
-            DispatchQueue.main.async {
-                self?.completeWarmUpIfNeeded()
-            }
+            self?.debugAudio("Speaker warm-up render emitted final buffer")
         }
 
         let timeoutWorkItem = DispatchWorkItem { [weak self] in
-            self?.completeWarmUp()
+            self?.completeWarmUpAfterTimeout()
         }
         warmUpTimeoutWorkItem = timeoutWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(700), execute: timeoutWorkItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: timeoutWorkItem)
     }
 
     private func completeWarmUpIfNeeded() {
         guard warmUpState == .warming else { return }
+        completeWarmUp()
+    }
+
+    private func completeWarmUpAfterTimeout() {
+        guard warmUpState == .warming else { return }
+
+        debugAudio("Speaker warm-up timed out")
+        if isRenderingWarmUp {
+            isRenderingWarmUp = false
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+
         completeWarmUp()
     }
 
@@ -205,6 +230,13 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         }
 
         debugAudio("Speaker didCancel utterance=\"\(utterance.speechString)\"")
+
+        if let pendingReplacementUtterance {
+            self.pendingReplacementUtterance = nil
+            debugAudio("Speaker speak canceled replacement utterance=\"\(pendingReplacementUtterance.speechString)\"")
+            synthesizer.speak(pendingReplacementUtterance)
+            return
+        }
 
         DispatchQueue.main.async { [weak self] in
             self?.completeWarmUpIfNeeded()
