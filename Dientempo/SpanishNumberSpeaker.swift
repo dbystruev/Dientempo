@@ -33,6 +33,13 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         debugAudio("Speaker prepareForCounting warm=\(isSelectedVoiceWarm)")
         activateSpeakerAudioSession()
 
+        if isSelectedVoiceWarm {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+                completion()
+            }
+            return
+        }
+
         warmUpCompletions.append(completion)
         startWarmUpIfNeeded()
     }
