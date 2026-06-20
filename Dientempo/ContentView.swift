@@ -14,6 +14,8 @@ struct ContentView: View {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
+                let gesturesEnabled = !counter.isWarmingUp
+
                 VStack(spacing: 0) {
                     Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.06))
 
@@ -31,6 +33,7 @@ struct ContentView: View {
                             togglePause()
                         }
                         .gesture(swipeGesture)
+                        .disabled(!gesturesEnabled)
 
                     Text(counter.currentWords)
                         .font(.system(size: wordsFontSize(in: proxy.size), weight: .semibold, design: .rounded))
@@ -47,24 +50,33 @@ struct ContentView: View {
                             togglePause()
                         }
                         .gesture(swipeGesture)
+                        .disabled(!gesturesEnabled)
 
                     Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.04))
 
                     Button {
                         startOrStopCounting()
                     } label: {
-                        Text(counter.isCounting ? "Alto" : "Vamos")
-                            .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: buttonHeight(in: proxy.size))
+                        if counter.isWarmingUp {
+                            Text("Calentando...")
+                                .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: buttonHeight(in: proxy.size))
+                        } else {
+                            Text(counter.isCounting ? "Alto" : "Vamos")
+                                .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: buttonHeight(in: proxy.size))
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle(radius: 8))
-                    .tint(counter.isCounting ? .red : .teal)
-                    .accessibilityLabel(counter.isCounting ? "Alto" : "Vamos")
+                    .tint(counter.isWarmingUp ? .gray : (counter.isCounting ? .red : .teal))
+                    .disabled(counter.isWarmingUp)
+                    .accessibilityLabel(counter.isWarmingUp ? "Calentando" : (counter.isCounting ? "Alto" : "Vamos"))
 
                     ZStack(alignment: .top) {
-                        if !counter.isCounting {
+                        if !counter.isCounting && !counter.isWarmingUp {
                             Button("Voz") {
                                 isShowingVoiceSettings = true
                             }
@@ -82,6 +94,7 @@ struct ContentView: View {
         }
         .onAppear {
             applyPowerPolicy()
+            counter.prepareSpeech()
         }
         .onDisappear {
             shouldResumeAfterSceneInterruption = false
