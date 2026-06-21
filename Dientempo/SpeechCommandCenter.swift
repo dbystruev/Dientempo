@@ -97,9 +97,8 @@ final class SpeechCommandCenter: ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
-            try session.overrideOutputAudioPort(.speaker)
             isRecognitionAudioSessionActive = true
 
             let inputNode = audioEngine.inputNode
