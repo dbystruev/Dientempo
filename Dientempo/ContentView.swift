@@ -4,7 +4,6 @@ import UIKit
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var counter = ToothCountingViewModel()
-    @StateObject private var commands = SpeechCommandCenter()
     @State private var isShowingVoiceSettings = false
     @State private var shouldResumeAfterSceneInterruption = false
 
@@ -99,7 +98,6 @@ struct ContentView: View {
         .onDisappear {
             shouldResumeAfterSceneInterruption = false
             allowIdleTimer()
-            commands.stop()
             counter.stop()
         }
         .onChange(of: counter.state) { _ in
@@ -115,7 +113,6 @@ struct ContentView: View {
                 shouldResumeAfterSceneInterruption = false
                 applyPowerPolicy()
             case .inactive, .background:
-                commands.stop()
                 if counter.isRunning {
                     shouldResumeAfterSceneInterruption = true
                     counter.pauseForInterruption()
@@ -148,29 +145,9 @@ struct ContentView: View {
         applyPowerPolicy()
     }
 
-    private func startListeningForCommands() {
-        commands.start { command in
-            switch command {
-            case .start:
-                counter.start()
-            case .stop:
-                shouldResumeAfterSceneInterruption = false
-                counter.stop()
-            }
-
-            applyPowerPolicy()
-        }
-    }
-
     private func applyPowerPolicy() {
         let shouldStayAwake = scenePhase == .active && counter.isRunning
         UIApplication.shared.isIdleTimerDisabled = shouldStayAwake
-
-        if shouldStayAwake {
-            startListeningForCommands()
-        } else {
-            commands.stop()
-        }
 
         debugPower("idleTimerDisabled=\(UIApplication.shared.isIdleTimerDisabled) state=\(counter.state)")
     }
