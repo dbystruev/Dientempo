@@ -1,0 +1,28 @@
+What to test in this build:
+
+1. Audio routing with EarPods/Bluetooth
+   - Connect EarPods or Bluetooth headphones before opening the app
+   - Start counting - audio should play through the connected device
+   - Disconnect EarPods while counting - audio should switch to iPhone speaker
+   - Reconnect EarPods - audio should switch back to the connected device
+
+2. Audio routing without external devices
+   - Start counting without any EarPods/Bluetooth connected
+   - Audio should play through iPhone speaker at normal volume
+
+3. Warm-up behavior
+   - App should show "Calentando..." on launch (gray button, disabled)
+   - After 1-3 seconds, button should change to "Vamos" and become enabled
+   - Swipe gestures should not work during warm-up
+
+4. First utterance clarity
+   - Tap "Vamos" and listen to "Cero" - it should be complete, not cut off
+
+5. Swipe acceleration
+   - Swipe left/right to navigate numbers
+   - Swipe multiple times quickly in the same direction - the jump should increase
+   - Pause for 1+ second, then swipe again - should reset to +1
+
+6. No vibration during counting
+   - Start counting and hold the phone - no vibration should be felt
+   - Place phone on a table while counting - no vibration should be heard/felt
