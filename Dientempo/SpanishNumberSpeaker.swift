@@ -13,7 +13,6 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private var warmedVoiceIdentifier: String?
     private var warmingVoiceIdentifier: String?
     private var warmUpCompletions: [() -> Void] = []
-    private var warmUpTimeoutWorkItem: DispatchWorkItem?
     private var isSpeakerAudioSessionActive = false
     private var isRenderingWarmUp = false
     private var pendingReplacementUtterance: AVSpeechUtterance?
@@ -112,15 +111,18 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         isRenderingWarmUp = true
         // Render and discard one utterance to load the selected voice without audible warm-up.
         synthesizer.write(utterance) { [weak self] buffer in
-            guard let pcmBuffer = buffer as? AVAudioPCMBuffer, pcmBuffer.frameLength == 0 else { return }
-            self?.debugAudio("Speaker warm-up render emitted final buffer")
+            guard let self, let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
+            if pcmBuffer.frameLength > 0 {
+                // Non-empty buffer during warm-up render - ignore
+                return
+            }
+            // Final empty buffer - warm-up render complete
+            self.debugAudio("Speaker warm-up render complete")
+            DispatchQueue.main.async {
+                self.isRenderingWarmUp = false
+                self.completeWarmUpIfNeeded()
+            }
         }
-
-        let timeoutWorkItem = DispatchWorkItem { [weak self] in
-            self?.completeWarmUpAfterTimeout()
-        }
-        warmUpTimeoutWorkItem = timeoutWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: timeoutWorkItem)
     }
 
     private func completeWarmUpIfNeeded() {
@@ -128,23 +130,9 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         completeWarmUp()
     }
 
-    private func completeWarmUpAfterTimeout() {
-        guard warmUpState == .warming else { return }
-
-        debugAudio("Speaker warm-up timed out")
-        if isRenderingWarmUp {
-            isRenderingWarmUp = false
-            synthesizer.stopSpeaking(at: .immediate)
-        }
-
-        completeWarmUp()
-    }
-
     private func completeWarmUp() {
         guard warmUpState != .ready else { return }
 
-        warmUpTimeoutWorkItem?.cancel()
-        warmUpTimeoutWorkItem = nil
         warmUpState = .ready
         warmedVoiceIdentifier = warmingVoiceIdentifier
         warmingVoiceIdentifier = nil
