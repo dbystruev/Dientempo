@@ -124,15 +124,14 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         return baseRate + normalized * 0.10
     }
 
-    func rateForDelay(_ delay: TimeInterval) -> Float {
-        let boost = Float(min(max(delay, 0), 3.0)) * 0.1
-        return min(baseRate + boost, maxRate)
-    }
-
-    private func rate(for words: String, delay: TimeInterval) -> Float {
+    func rateForWords(_ words: String, delay: TimeInterval) -> Float {
         let base = rateForLength(words)
         let boost = Float(min(max(delay, 0), 3.0)) * 0.1
         return min(base + boost, maxRate)
+    }
+
+    private func rate(for words: String, delay: TimeInterval) -> Float {
+        return rateForWords(words, delay: delay)
     }
 
     private func startWarmUpIfNeeded() {

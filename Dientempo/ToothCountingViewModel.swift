@@ -154,7 +154,8 @@ final class ToothCountingViewModel: ObservableObject {
         let now = Date()
         let expectedTime = sessionStartTime!.addingTimeInterval(TimeInterval(number))
         let delay = now.timeIntervalSince(expectedTime)
-        let adjustedRate = speaker.rateForDelay(delay)
+        let words = SpanishNumberFormatter.words(for: number)
+        let adjustedRate = speaker.rateForWords(words, delay: delay)
 
         debugLog("speak number=\(number) delay=\(String(format: "%.2f", delay))s rate=\(String(format: "%.2f", adjustedRate))")
 
