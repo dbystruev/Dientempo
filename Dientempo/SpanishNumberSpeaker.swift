@@ -18,6 +18,9 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private var pendingReplacementUtterance: AVSpeechUtterance?
     private var speakCompletion: (() -> Void)?
 
+    private let baseRate: Float = 0.50
+    private let maxRate: Float = 0.70
+
     override init() {
         super.init()
         synthesizer.delegate = self
@@ -64,6 +67,26 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         synthesizer.speak(utterance)
     }
 
+    func speak(number: Int, rate: Float, completion: (() -> Void)? = nil) {
+        activateSpeakerAudioSession()
+
+        let words = SpanishNumberFormatter.words(for: number)
+        let utterance = utterance(for: words, rate: rate)
+        debugAudio("Speaker speak number=\(number) words=\"\(words)\" rate=\(String(format: "%.2f", rate)) wasSpeaking=\(synthesizer.isSpeaking)")
+
+        if synthesizer.isSpeaking {
+            pendingReplacementUtterance = utterance
+            speakCompletion = completion
+            debugAudio("Speaker interrupt previous utterance before number=\(number); replacement pending")
+            synthesizer.stopSpeaking(at: .immediate)
+            speakPendingReplacementIfIdle()
+            return
+        }
+
+        speakCompletion = completion
+        synthesizer.speak(utterance)
+    }
+
     func stop() {
         pendingReplacementUtterance = nil
         speakCompletion = nil
@@ -94,10 +117,21 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         }
     }
 
-    private func rate(for words: String) -> Float {
+    private func rateForLength(_ words: String) -> Float {
         let length = Float(words.count)
         let normalized = min(max((length - 4) / 22, 0), 1)
-        return 0.55 + normalized * 0.10
+        return baseRate + normalized * 0.10
+    }
+
+    func rateForDelay(_ delay: TimeInterval) -> Float {
+        let boost = Float(min(max(delay, 0), 3.0)) * 0.1
+        return min(baseRate + boost, maxRate)
+    }
+
+    private func rate(for words: String, delay: TimeInterval) -> Float {
+        let base = rateForLength(words)
+        let boost = Float(min(max(delay, 0), 3.0)) * 0.1
+        return min(base + boost, maxRate)
     }
 
     private func startWarmUpIfNeeded() {
@@ -113,7 +147,6 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
         isRenderingWarmUp = true
-        // Render and discard one utterance to load the selected voice without audible warm-up.
         synthesizer.write(utterance) { [weak self] buffer in
             guard let self, let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
             if pcmBuffer.frameLength > 0 {
@@ -148,7 +181,18 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private func utterance(for words: String) -> AVSpeechUtterance {
         let utterance = AVSpeechUtterance(string: words)
         utterance.voice = selectedVoice
-        utterance.rate = rate(for: words)
+        utterance.rate = rateForLength(words)
+        utterance.pitchMultiplier = 1.0
+        utterance.volume = 1.0
+        utterance.preUtteranceDelay = 0
+        utterance.postUtteranceDelay = 0
+        return utterance
+    }
+
+    private func utterance(for words: String, rate: Float) -> AVSpeechUtterance {
+        let utterance = AVSpeechUtterance(string: words)
+        utterance.voice = selectedVoice
+        utterance.rate = rate
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
         utterance.preUtteranceDelay = 0
@@ -206,9 +250,6 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         if isRenderingWarmUp {
             isRenderingWarmUp = false
-            DispatchQueue.main.async { [weak self] in
-                self?.completeWarmUpIfNeeded()
-            }
             return
         }
 

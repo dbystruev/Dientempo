@@ -18,6 +18,7 @@ final class ToothCountingViewModel: ObservableObject {
     private let speaker = SpanishNumberSpeaker()
     private var activeSessionID = UUID()
     private var sessionStartTime: Date?
+    private var lastNumberSpokenTime: Date?
 
     private var lastSwipeTime: Date?
     private var swipeDirection: Int?
@@ -135,7 +136,9 @@ final class ToothCountingViewModel: ObservableObject {
     private func startCounting(from firstNumber: Int) {
         activeSessionID = UUID()
         state = .running
-        sessionStartTime = Date()
+        let now = Date()
+        sessionStartTime = now.addingTimeInterval(-TimeInterval(firstNumber))
+        lastNumberSpokenTime = now
         let sessionID = activeSessionID
 
         speaker.prepareForCounting { [weak self] in
@@ -148,8 +151,16 @@ final class ToothCountingViewModel: ObservableObject {
         guard state == .running, activeSessionID == sessionID else { return }
 
         currentNumber = number
-        debugLog("speak number=\(number)")
-        speaker.speak(number: number) { [weak self] in
+
+        let now = Date()
+        let expectedTime = sessionStartTime!.addingTimeInterval(TimeInterval(number))
+        let delay = now.timeIntervalSince(expectedTime)
+        let adjustedRate = speaker.rateForDelay(delay)
+
+        debugLog("speak number=\(number) delay=\(String(format: "%.2f", delay))s rate=\(String(format: "%.2f", adjustedRate))")
+
+        lastNumberSpokenTime = now
+        speaker.speak(number: number, rate: adjustedRate) { [weak self] in
             guard let self else { return }
             DispatchQueue.main.async {
                 guard self.state == .running, self.activeSessionID == sessionID else { return }
@@ -174,7 +185,7 @@ final class ToothCountingViewModel: ObservableObject {
     private func logSessionDuration() {
         guard let startTime = sessionStartTime else { return }
         let duration = Date().timeIntervalSince(startTime)
-        debugLog(String(format: "session duration=%.1fs for %d numbers", duration, currentNumber + 1))
+        debugLog(String(format: "session duration=%.1fs for %d numbers (%.2fs avg)", duration, currentNumber + 1, duration / Double(currentNumber + 1)))
         sessionStartTime = nil
     }
 
