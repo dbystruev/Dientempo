@@ -1,28 +1,46 @@
-What to test in this build:
+What to test in this build (v1.4, build 2026.06.30):
 
-1. Audio routing with EarPods/Bluetooth
-   - Connect EarPods or Bluetooth headphones before opening the app
-   - Start counting - audio should play through the connected device
-   - Disconnect EarPods while counting - audio should switch to iPhone speaker
-   - Reconnect EarPods - audio should switch back to the connected device
+Changes since v1.3 (build 2026.06.23):
+- Removed speech recognition (no microphone permission, no vibration)
+- Fixed audio routing to respect connected EarPods/Bluetooth devices
+- Each number now finishes speaking before the next starts (no cutting words)
+- Rate adjusts based on word length and delay (long words start faster)
+- Pause duration excluded from session timing
+- Timer resets completely after pause/swipe (no rate creep)
 
-2. Audio routing without external devices
-   - Start counting without any EarPods/Bluetooth connected
-   - Audio should play through iPhone speaker at normal volume
+Test items:
 
-3. Warm-up behavior
+1. Warm-up behavior
    - App should show "Calentando..." on launch (gray button, disabled)
    - After 1-3 seconds, button should change to "Vamos" and become enabled
-   - Swipe gestures should not work during warm-up
+   - No duplicate log lines in debug console
 
-4. First utterance clarity
-   - Tap "Vamos" and listen to "Cero" - it should be complete, not cut off
+2. Audio routing with EarPods/Bluetooth
+   - Connect EarPods or Bluetooth before opening app
+   - Audio should play through connected device
+   - Disconnect EarPods while counting - audio should switch to iPhone speaker
+   - Reconnect EarPods - audio should switch back
 
-5. Swipe acceleration
+3. First utterance clarity
+   - Tap "Vamos" and listen to "Cero" - should be complete, not cut off
+
+4. Word completion
+   - Each number should finish speaking before the next starts
+   - No words should be cut short
+
+5. Swipe behavior
    - Swipe left/right to navigate numbers
-   - Swipe multiple times quickly in the same direction - the jump should increase
-   - Pause for 1+ second, then swipe again - should reset to +1
+   - Swipe multiple times quickly - jump should accelerate (1, 2, 3, 5, 8, 12, 16)
+   - After swiping to a high number (e.g., 150+), long words should start at appropriate speed
+   - After swiping back to low numbers, short words should return to normal speed
 
-6. No vibration during counting
-   - Start counting and hold the phone - no vibration should be felt
-   - Place phone on a table while counting - no vibration should be heard/felt
+6. Pause behavior
+   - Tap to pause, then resume - counting should continue smoothly
+   - Pausing for any duration should not affect the rate after resume
+
+7. No vibration
+   - Hold phone while counting - no vibration should be felt
+   - Place phone on table while counting - no vibration should be heard/felt
+
+8. No microphone permission
+   - On first launch, no microphone permission dialog should appear
