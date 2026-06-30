@@ -191,9 +191,6 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         if isRenderingWarmUp {
             isRenderingWarmUp = false
-            DispatchQueue.main.async { [weak self] in
-                self?.completeWarmUpIfNeeded()
-            }
             return
         }
 
