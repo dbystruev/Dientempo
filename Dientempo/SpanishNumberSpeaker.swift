@@ -17,6 +17,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private var isRenderingWarmUp = false
     private var pendingReplacementUtterance: AVSpeechUtterance?
     private var speakCompletion: (() -> Void)?
+    private var warmUpUtterance: AVSpeechUtterance?
 
     private let baseRate: Float = 0.50
     private let maxRate: Float = 0.70
@@ -146,6 +147,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         debugAudio("Speaker warm-up starting voice=\(warmingVoiceIdentifier ?? "none")")
 
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
+        warmUpUtterance = utterance
         isRenderingWarmUp = true
         synthesizer.write(utterance) { [weak self] buffer in
             guard let self, let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
@@ -233,7 +235,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        if isRenderingWarmUp {
+        if utterance === warmUpUtterance {
+            warmUpUtterance = nil
             isRenderingWarmUp = false
             return
         }
@@ -248,7 +251,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        if isRenderingWarmUp {
+        if utterance === warmUpUtterance {
+            warmUpUtterance = nil
             isRenderingWarmUp = false
             return
         }
