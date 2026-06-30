@@ -19,6 +19,7 @@ final class ToothCountingViewModel: ObservableObject {
     private var activeSessionID = UUID()
     private var sessionStartTime: Date?
     private var lastNumberSpokenTime: Date?
+    private var pauseStartTime: Date?
 
     private var lastSwipeTime: Date?
     private var swipeDirection: Int?
@@ -54,6 +55,7 @@ final class ToothCountingViewModel: ObservableObject {
     func pauseForInterruption() {
         guard isRunning else { return }
 
+        pauseStartTime = Date()
         activeSessionID = UUID()
         speaker.stop()
         speaker.releaseAudioSession()
@@ -61,8 +63,11 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     func resumeAfterInterruption() {
-        guard state == .paused else { return }
+        guard state == .paused, let pauseStart = pauseStartTime else { return }
 
+        let pauseDuration = Date().timeIntervalSince(pauseStart)
+        sessionStartTime = sessionStartTime?.addingTimeInterval(pauseDuration)
+        pauseStartTime = nil
         startCounting(from: currentNumber)
     }
 
