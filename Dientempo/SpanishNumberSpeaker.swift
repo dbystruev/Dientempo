@@ -97,7 +97,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private func rate(for words: String) -> Float {
         let length = Float(words.count)
         let normalized = min(max((length - 4) / 22, 0), 1)
-        return 0.48 + normalized * 0.14
+        return 0.55 + normalized * 0.10
     }
 
     private func startWarmUpIfNeeded() {

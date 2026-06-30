@@ -17,6 +17,7 @@ final class ToothCountingViewModel: ObservableObject {
 
     private let speaker = SpanishNumberSpeaker()
     private var activeSessionID = UUID()
+    private var sessionStartTime: Date?
 
     private var lastSwipeTime: Date?
     private var swipeDirection: Int?
@@ -68,6 +69,7 @@ final class ToothCountingViewModel: ObservableObject {
         activeSessionID = UUID()
         speaker.stop()
         speaker.releaseAudioSession()
+        logSessionDuration()
         currentNumber = 0
         state = .ready
         resetSwipeStreak()
@@ -133,6 +135,7 @@ final class ToothCountingViewModel: ObservableObject {
     private func startCounting(from firstNumber: Int) {
         activeSessionID = UUID()
         state = .running
+        sessionStartTime = Date()
         let sessionID = activeSessionID
 
         speaker.prepareForCounting { [weak self] in
@@ -145,9 +148,10 @@ final class ToothCountingViewModel: ObservableObject {
         guard state == .running, activeSessionID == sessionID else { return }
 
         currentNumber = number
+        debugLog("speak number=\(number)")
         speaker.speak(number: number) { [weak self] in
             guard let self else { return }
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 guard self.state == .running, self.activeSessionID == sessionID else { return }
 
                 if number < Self.targetNumber {
@@ -162,7 +166,21 @@ final class ToothCountingViewModel: ObservableObject {
     private func finish() {
         speaker.stop()
         speaker.releaseAudioSession()
+        logSessionDuration()
         currentNumber = Self.targetNumber
         state = .finished
+    }
+
+    private func logSessionDuration() {
+        guard let startTime = sessionStartTime else { return }
+        let duration = Date().timeIntervalSince(startTime)
+        debugLog(String(format: "session duration=%.1fs for %d numbers", duration, currentNumber + 1))
+        sessionStartTime = nil
+    }
+
+    private func debugLog(_ message: String) {
+        #if DEBUG
+        NSLog("[DientempoCount] %@", message)
+        #endif
     }
 }
