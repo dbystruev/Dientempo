@@ -10,7 +10,6 @@
 		3B8B436340CAC7D6872D1790 /* SpanishNumberSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B488F5766E2D67FA7933E9C /* SpanishNumberSpeaker.swift */; };
 		3C892D9B62BD612BE9F90BF0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC661758D9F811FBB30124D4 /* Assets.xcassets */; };
 		3FFF482D159D1279CA16FEF2 /* SpanishVoiceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3933AFB64E5077C303656A22 /* SpanishVoiceSettings.swift */; };
-		42D7A17BB38F89F7AF74F281 /* SpeechCommandCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */; };
 		5C83265B8E3970FA6635A8C8 /* DientempoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86FE1BAD68399702E4278DD0 /* DientempoApp.swift */; };
 		8E4AF3071ED9139D3EDD001B /* SpanishNumberFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */; };
 		BFD0BE7E1DB4D8C4D0CEACE2 /* ToothCountingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */; };
@@ -39,7 +38,6 @@
 		3DFB91AD2C50CCF3ADDED442 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ToothCountingViewModel.swift; sourceTree = "<group>"; };
 		4C688140D62D4A1D475F3597 /* Dientempo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dientempo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpeechCommandCenter.swift; sourceTree = "<group>"; };
 		53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpanishNumberFormatter.swift; sourceTree = "<group>"; };
 		86FE1BAD68399702E4278DD0 /* DientempoApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DientempoApp.swift; sourceTree = "<group>"; };
 		FC661758D9F811FBB30124D4 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -74,7 +72,6 @@
 				4015F3093B1E9C83D2AD7224 /* ToothCountingViewModel.swift */,
 				53EEF06D047CC31E7B81EDF8 /* SpanishNumberFormatter.swift */,
 				2B488F5766E2D67FA7933E9C /* SpanishNumberSpeaker.swift */,
-				5032D640C3C5B74DECE8B963 /* SpeechCommandCenter.swift */,
 				FC661758D9F811FBB30124D4 /* Assets.xcassets */,
 				3DFB91AD2C50CCF3ADDED442 /* Info.plist */,
 				3933AFB64E5077C303656A22 /* SpanishVoiceSettings.swift */,
@@ -229,7 +226,6 @@
 				BFD0BE7E1DB4D8C4D0CEACE2 /* ToothCountingViewModel.swift in Sources */,
 				8E4AF3071ED9139D3EDD001B /* SpanishNumberFormatter.swift in Sources */,
 				3B8B436340CAC7D6872D1790 /* SpanishNumberSpeaker.swift in Sources */,
-				42D7A17BB38F89F7AF74F281 /* SpeechCommandCenter.swift in Sources */,
 				3FFF482D159D1279CA16FEF2 /* SpanishVoiceSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
