@@ -16,7 +16,6 @@ final class ToothCountingViewModel: ObservableObject {
     @Published private(set) var isWarmingUp = true
 
     private let speaker = SpanishNumberSpeaker()
-    private var countingTimer: DispatchSourceTimer?
     private var activeSessionID = UUID()
 
     private var lastSwipeTime: Date?
@@ -53,7 +52,6 @@ final class ToothCountingViewModel: ObservableObject {
     func pauseForInterruption() {
         guard isRunning else { return }
 
-        cancelCountingTimer()
         activeSessionID = UUID()
         speaker.stop()
         speaker.releaseAudioSession()
@@ -67,7 +65,6 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     func stop() {
-        cancelCountingTimer()
         activeSessionID = UUID()
         speaker.stop()
         speaker.releaseAudioSession()
@@ -134,62 +131,38 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     private func startCounting(from firstNumber: Int) {
-        cancelCountingTimer()
+        activeSessionID = UUID()
         state = .running
-        let sessionID = UUID()
-        activeSessionID = sessionID
+        let sessionID = activeSessionID
 
         speaker.prepareForCounting { [weak self] in
             guard let self else { return }
-            self.beginCounting(from: firstNumber, sessionID: sessionID)
+            self.speakNumber(firstNumber, sessionID: sessionID)
         }
     }
 
-    private func beginCounting(from firstNumber: Int, sessionID: UUID) {
+    private func speakNumber(_ number: Int, sessionID: UUID) {
         guard state == .running, activeSessionID == sessionID else { return }
 
-        let startTime = DispatchTime.now()
-        announce(number: firstNumber)
-        scheduleNextTick(number: firstNumber + 1, firstNumber: firstNumber, startTime: startTime, sessionID: sessionID)
-    }
+        currentNumber = number
+        speaker.speak(number: number) { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                guard self.state == .running, self.activeSessionID == sessionID else { return }
 
-    private func scheduleNextTick(number: Int, firstNumber: Int, startTime: DispatchTime, sessionID: UUID) {
-        guard state == .running, activeSessionID == sessionID else { return }
-
-        let elapsedCount = number - firstNumber
-        let timer = DispatchSource.makeTimerSource(queue: .main)
-        timer.schedule(deadline: startTime + .seconds(elapsedCount), leeway: .milliseconds(2))
-        timer.setEventHandler { [weak self] in
-            guard let self, self.state == .running, self.activeSessionID == sessionID else { return }
-
-            if number <= Self.targetNumber {
-                self.announce(number: number)
-                self.scheduleNextTick(number: number + 1, firstNumber: firstNumber, startTime: startTime, sessionID: sessionID)
-            } else {
-                self.finish()
+                if number < Self.targetNumber {
+                    self.speakNumber(number + 1, sessionID: sessionID)
+                } else {
+                    self.finish()
+                }
             }
         }
-
-        countingTimer = timer
-        timer.resume()
-    }
-
-    private func announce(number: Int) {
-        currentNumber = number
-        speaker.speak(number: number)
     }
 
     private func finish() {
-        cancelCountingTimer()
         speaker.stop()
         speaker.releaseAudioSession()
         currentNumber = Self.targetNumber
         state = .finished
-    }
-
-    private func cancelCountingTimer() {
-        countingTimer?.setEventHandler {}
-        countingTimer?.cancel()
-        countingTimer = nil
     }
 }

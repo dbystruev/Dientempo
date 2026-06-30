@@ -16,6 +16,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     private var isSpeakerAudioSessionActive = false
     private var isRenderingWarmUp = false
     private var pendingReplacementUtterance: AVSpeechUtterance?
+    private var speakCompletion: (() -> Void)?
 
     override init() {
         super.init()
@@ -43,7 +44,7 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         startWarmUpIfNeeded()
     }
 
-    func speak(number: Int) {
+    func speak(number: Int, completion: (() -> Void)? = nil) {
         activateSpeakerAudioSession()
 
         let words = SpanishNumberFormatter.words(for: number)
@@ -52,17 +53,20 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
 
         if synthesizer.isSpeaking {
             pendingReplacementUtterance = utterance
+            speakCompletion = completion
             debugAudio("Speaker interrupt previous utterance before number=\(number); replacement pending")
             synthesizer.stopSpeaking(at: .immediate)
             speakPendingReplacementIfIdle()
             return
         }
 
+        speakCompletion = completion
         synthesizer.speak(utterance)
     }
 
     func stop() {
         pendingReplacementUtterance = nil
+        speakCompletion = nil
         guard synthesizer.isSpeaking else { return }
         debugAudio("Speaker stop current utterance")
         synthesizer.stopSpeaking(at: .immediate)
@@ -113,10 +117,8 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         synthesizer.write(utterance) { [weak self] buffer in
             guard let self, let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
             if pcmBuffer.frameLength > 0 {
-                // Non-empty buffer during warm-up render - ignore
                 return
             }
-            // Final empty buffer - warm-up render complete
             self.debugAudio("Speaker warm-up render complete")
             DispatchQueue.main.async {
                 self.isRenderingWarmUp = false
@@ -166,7 +168,6 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
             debugAudio("Speaker audio session activated")
         } catch {
             debugAudio("Speaker audio session activation failed: \(error)")
-            // Speech should still be attempted if route setup fails.
         }
     }
 
@@ -190,31 +191,27 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         if isRenderingWarmUp {
             isRenderingWarmUp = false
-            debugAudio("Speaker warm-up render didFinish word=\"\(utterance.speechString)\"")
-
             DispatchQueue.main.async { [weak self] in
                 self?.completeWarmUpIfNeeded()
             }
-
             return
         }
 
         debugAudio("Speaker didFinish utterance=\"\(utterance.speechString)\"")
 
-        DispatchQueue.main.async { [weak self] in
-            self?.completeWarmUpIfNeeded()
+        let completion = speakCompletion
+        speakCompletion = nil
+        DispatchQueue.main.async {
+            completion?()
         }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         if isRenderingWarmUp {
             isRenderingWarmUp = false
-            debugAudio("Speaker warm-up render didCancel word=\"\(utterance.speechString)\"")
-
             DispatchQueue.main.async { [weak self] in
                 self?.completeWarmUpIfNeeded()
             }
-
             return
         }
 
@@ -227,8 +224,10 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
             return
         }
 
-        DispatchQueue.main.async { [weak self] in
-            self?.completeWarmUpIfNeeded()
+        let completion = speakCompletion
+        speakCompletion = nil
+        DispatchQueue.main.async {
+            completion?()
         }
     }
 
