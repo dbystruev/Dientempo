@@ -149,11 +149,14 @@ final class SpanishNumberSpeaker: NSObject, AVSpeechSynthesizerDelegate, @unchec
         let utterance = utterance(for: SpanishNumberFormatter.words(for: 0))
         warmUpUtterance = utterance
         isRenderingWarmUp = true
+        var warmUpCompleted = false
         synthesizer.write(utterance) { [weak self] buffer in
             guard let self, let pcmBuffer = buffer as? AVAudioPCMBuffer else { return }
             if pcmBuffer.frameLength > 0 {
                 return
             }
+            guard !warmUpCompleted else { return }
+            warmUpCompleted = true
             self.debugAudio("Speaker warm-up render complete")
             DispatchQueue.main.async {
                 self.isRenderingWarmUp = false
