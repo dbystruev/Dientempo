@@ -4,21 +4,55 @@ Dientempo is a small native iOS app for brushing teeth while learning Spanish nu
 
 The name is a coined word from Spanish **diente** (tooth) and **tiempo** (time): roughly "tooth time."
 
-The default session counts from 0 through 200, inclusive, so the full run lasts 201 seconds. Each second shows the digit, shows the Spanish words, and speaks the number in Spanish. The app is meant for English speakers who want to practice Spanish numbers during an existing daily habit.
+## Links
+
+- **TestFlight**: https://testflight.apple.com/join/jtC3rKeZ
+- **Website**: https://dientempo.bystruev.com
+- **Support**: dientempo@bystruev.com
+
+## How It Works
+
+The default session counts from 0 through 200, inclusive, so the full run lasts about 201 seconds. Each second shows the digit, shows the Spanish words, and speaks the number in Spanish. The app is meant for English speakers who want to practice Spanish numbers during an existing daily habit.
 
 The start button says **Vamos**, which is a natural Spanish equivalent of "let's go" for this use. During a run, the button changes to **Alto**.
 
+## Features
+
+- Clear Spanish pronunciation using high-quality system voices
+- Large, easy-to-read display with digits and Spanish words
+- Tap to pause/resume, swipe to skip forward or backward
+- Accelerating swipe for quick navigation (1 → 2 → 3 → 5 → 8 → 12 → 16)
+- Automatic dark and light mode support
+- Voice selection for installed Spanish voices
+- Works completely offline — no internet required
+- Precise timing: each word finishes before the next begins
+
+## Voice Selection
+
 The **Voz** link appears only before and after counting. It opens an in-app voice picker for installed Spanish system voices. To add higher-quality voices, use iOS Settings > Accessibility > Spoken Content > Voices > Spanish, then relaunch or reopen Voz.
 
-During counting, tap the digit or Spanish words to pause or resume. Swipe left on the digit or words to move to the next number, or swipe right to move to the previous number; the count stays within 0...200. Swipe quickly multiple times to accelerate the jump (1 → 2 → 3 → 5 → 8 → 12 → 16).
+## Timing
 
-Counting is offline-first:
+- Each number finishes speaking before the next starts (no cutting words)
+- Speech rate adjusts based on word length (long words start faster)
+- Pause duration is excluded from session timing
+- Timer resets completely after pause or swipe
 
-- Spanish number words are generated locally.
-- Speech uses `AVSpeechSynthesizer`, warms the selected Spanish voice before counting starts, and picks the highest-quality installed Spanish voice.
-- Timer progression is based on elapsed monotonic time, not on speech completion, so the 0...200 session lasts exactly 201 seconds.
-- If the app is interrupted or sent to the background while counting, it pauses and resumes from the same number when active again.
+## Offline Support
 
-Minimum deployment target: iOS 16.0.
+- Spanish number words are generated locally
+- Speech uses `AVSpeechSynthesizer` with offline voice processing
+- No API or internet usage during counting
+
+## Requirements
+
+- iOS 16.0+
+- Xcode 26.5+ (for building from source)
+
+## Building
 
 Open `Dientempo.xcodeproj` in Xcode and run the `Dientempo` scheme on an iPhone simulator or device.
+
+## App Store Submission
+
+App Store materials are in `app-store/1.0/`, including promotional text, description, keywords, and screenshots.
