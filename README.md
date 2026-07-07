@@ -71,7 +71,8 @@ Screenshots are taken using `scripts/take-screenshots.sh`. They are saved to `sc
 Available screenshots:
 1. Warm-up screen (Calentando... button)
 2. Ready to count (0 / cero, Vamos button)
-3. Counting: number 42 / cuarenta y dos
+3. Counting: number 42 / cuarenta y dos (Alto button)
+4. Voice settings (Voz picker)
 
 After taking screenshots, copy them to the server:
 ```
