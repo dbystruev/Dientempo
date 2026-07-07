@@ -42,6 +42,14 @@ final class ToothCountingViewModel: ObservableObject {
         isWarmingUp = false
     }
 
+    func setForScreenshotWarmup() {
+        isWarmingUp = true
+        // Delay warm-up completion for screenshot
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+            self?.isWarmingUp = false
+        }
+    }
+
     func prepareSpeech() {
         isWarmingUp = true
         speaker.prepareForCounting { [weak self] in
