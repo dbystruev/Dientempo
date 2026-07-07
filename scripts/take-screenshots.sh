@@ -1,78 +1,199 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve script location (works with symlinks)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0")")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCHEME="Dientempo"
 BUILD_DIR="$PROJECT_DIR/build/screenshots"
-SCREENSHOTS_DIR="$PROJECT_DIR/app-store/1.0/screenshots"
+SCREENSHOTS_DIR="$PROJECT_DIR/screenshots"
 
 # Device UUIDs
 IPHONE_UUID="C3CCA346-B895-4C12-A793-5091C999DC95"  # iPhone 17 Pro Max
 IPAD_UUID="1A890E4C-599E-4F19-A1B4-6CCC7B7D97B8"     # iPad Pro 13-inch (M5)
 
+# Screenshot definitions: number|name|description|wait_seconds
+SCREENSHOTS=(
+    "1|warmup|Warm-up screen (Calentando... button, grayed out)|1"
+    "2|ready|Ready to count (0 / cero, Vamos button)|4"
+    "3|counting|Counting in progress (shows current number)|8"
+)
+
+show_help() {
+    cat << 'HELP'
+Dientempo Screenshot Tool
+
+Usage: take-screenshots.sh [OPTIONS] [SCREENSHOTS]
+
+Take screenshots of the Dientempo app for App Store submission.
+Screenshots are saved to the screenshots/ directory (gitignored).
+
+Options:
+  -h, --help       Show this help message
+  -l, --list       List all available screenshots
+  -b, --build      Build only, don't take screenshots
+
+Screenshots:
+  1  Warm-up screen (Calentando... button, grayed out)
+  2  Ready to count (0 / cero, Vamos button)
+  3  Counting in progress (shows current number)
+
+Examples:
+  take-screenshots.sh 1 2      # Take screenshots 1 and 2
+  take-screenshots.sh 3        # Take screenshot 3 only
+  take-screenshots.sh all      # Take all screenshots
+  take-screenshots.sh          # Take all screenshots
+
+For manual screenshots, run without arguments to launch the app,
+then use Cmd+S in Simulator to capture the screen.
+HELP
+}
+
+list_screenshots() {
+    echo "Available screenshots:"
+    echo ""
+    for entry in "${SCREENSHOTS[@]}"; do
+        IFS='|' read -r num name desc wait <<< "$entry"
+        echo "  $num  $name  $desc"
+    done
+}
+
+parse_args() {
+    SELECTED=()
+    BUILD_ONLY=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -l|--list)
+                list_screenshots
+                exit 0
+                ;;
+            -b|--build)
+                BUILD_ONLY=true
+                shift
+                ;;
+            all)
+                SELECTED=("${SCREENSHOTS[@]}")
+                shift
+                ;;
+            *)
+                if [[ "$1" =~ ^[0-9]+$ ]]; then
+                    for entry in "${SCREENSHOTS[@]}"; do
+                        IFS='|' read -r num name desc wait <<< "$entry"
+                        if [[ "$num" == "$1" ]]; then
+                            SELECTED+=("$entry")
+                        fi
+                    done
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if [[ ${#SELECTED[@]} -eq 0 && "$BUILD_ONLY" == false ]]; then
+        SELECTED=("${SCREENSHOTS[@]}")
+    fi
+}
+
+build_app() {
+    local dest_uuid="$1"
+    local label="$2"
+
+    echo "Building for $label..."
+    xcodebuild -project "$PROJECT_DIR/Dientempo.xcodeproj" \
+        -scheme "$SCHEME" \
+        -destination "id=$dest_uuid" \
+        -configuration Release \
+        -derivedDataPath "$BUILD_DIR/$label" \
+        build 2>&1 | tail -3
+    echo ""
+}
+
+boot_simulator() {
+    local uuid="$1"
+    local label="$2"
+
+    echo "Booting $label simulator..."
+    xcrun simctl boot "$uuid" 2>/dev/null || true
+    sleep 2
+}
+
+install_and_launch() {
+    local uuid="$1"
+    local label="$2"
+
+    echo "Installing app on $label..."
+    local app_path
+    app_path=$(find "$BUILD_DIR/$label" -name "Dientempo.app" -path "*/Release-iphonesimulator/*" | head -1)
+    if [[ -z "$app_path" ]]; then
+        app_path=$(find "$BUILD_DIR/$label" -name "Dientempo.app" | head -1)
+    fi
+    xcrun simctl install "$uuid" "$app_path"
+    xcrun simctl launch "$uuid" com.bystruev.dientempo
+}
+
+take_screenshot() {
+    local uuid="$1"
+    local filename="$2"
+    local device_label="$3"
+
+    xcrun simctl io "$uuid" screenshot "$SCREENSHOTS_DIR/${device_label}-${filename}.png"
+    echo "   Saved: ${device_label}-${filename}.png"
+}
+
+take_device_screenshots() {
+    local uuid="$1"
+    local label="$2"
+    shift 2
+    local selected=("$@")
+
+    echo "=== $label Screenshots ==="
+    echo ""
+
+    build_app "$uuid" "$label"
+    boot_simulator "$uuid" "$label"
+    install_and_launch "$uuid" "$label"
+
+    for entry in "${selected[@]}"; do
+        IFS='|' read -r num name desc wait <<< "$entry"
+
+        echo "Taking screenshot $num: $desc"
+        sleep "$wait"
+        take_screenshot "$uuid" "$name" "$label"
+        echo ""
+    done
+}
+
+# Main
+parse_args "$@"
+
+if [[ "$BUILD_ONLY" == true ]]; then
+    build_app "$IPHONE_UUID" "iphone"
+    build_app "$IPAD_UUID" "ipad"
+    echo "Build complete."
+    exit 0
+fi
+
+mkdir -p "$SCREENSHOTS_DIR"
+
 echo "=== Dientempo Screenshot Tool ==="
 echo ""
-
-mkdir -p "$BUILD_DIR" "$SCREENSHOTS_DIR"
-
-# Build for iPhone
-echo "1. Building for iPhone..."
-xcodebuild -project "$PROJECT_DIR/Dientempo.xcodeproj" \
-    -scheme "$SCHEME" \
-    -destination "id=$IPHONE_UUID" \
-    -configuration Release \
-    -derivedDataPath "$BUILD_DIR/iphone" \
-    build 2>&1 | tail -5
-
-# Boot iPhone if needed
-echo "2. Booting iPhone simulator..."
-xcrun simctl boot "$IPHONE_UUID" 2>/dev/null || true
-sleep 3
-
-# Install and launch on iPhone
-echo "3. Installing app on iPhone..."
-APP_PATH=$(find "$BUILD_DIR/iphone" -name "Dientempo.app" -path "*/Release-iphonesimulator/*" | head -1)
-if [ -z "$APP_PATH" ]; then
-    APP_PATH=$(find "$BUILD_DIR/iphone" -name "Dientempo.app" | head -1)
-fi
-xcrun simctl install "$IPHONE_UUID" "$APP_PATH"
-xcrun simctl launch "$IPHONE_UUID" com.bystruev.dientempo
-sleep 4
-
-# Take iPhone screenshots
-echo "4. Taking iPhone screenshots..."
-xcrun simctl io "$IPHONE_UUID" screenshot "$SCREENSHOTS_DIR/iphone-counting.png"
-echo "   Saved: iphone-counting.png"
-
-# Build for iPad
+echo "Screenshots to take: ${#SELECTED[@]}"
+for entry in "${SELECTED[@]}"; do
+    IFS='|' read -r num name desc wait <<< "$entry"
+    echo "  $num. $desc"
+done
 echo ""
-echo "5. Building for iPad..."
-xcodebuild -project "$PROJECT_DIR/Dientempo.xcodeproj" \
-    -scheme "$SCHEME" \
-    -destination "id=$IPAD_UUID" \
-    -configuration Release \
-    -derivedDataPath "$BUILD_DIR/ipad" \
-    build 2>&1 | tail -5
+echo "Tip: For manual screenshots, run with --build only, then launch"
+echo "     the app in Simulator and use Cmd+S to capture screens."
+echo ""
 
-# Boot iPad if needed
-echo "6. Booting iPad simulator..."
-xcrun simctl boot "$IPAD_UUID" 2>/dev/null || true
-sleep 3
-
-# Install and launch on iPad
-echo "7. Installing app on iPad..."
-APP_PATH=$(find "$BUILD_DIR/ipad" -name "Dientempo.app" -path "*/Release-iphonesimulator/*" | head -1)
-if [ -z "$APP_PATH" ]; then
-    APP_PATH=$(find "$BUILD_DIR/ipad" -name "Dientempo.app" | head -1)
-fi
-xcrun simctl install "$IPAD_UUID" "$APP_PATH"
-xcrun simctl launch "$IPAD_UUID" com.bystruev.dientempo
-sleep 4
-
-# Take iPad screenshot
-echo "8. Taking iPad screenshot..."
-xcrun simctl io "$IPAD_UUID" screenshot "$SCREENSHOTS_DIR/ipad-counting.png"
-echo "   Saved: ipad-counting.png"
+take_device_screenshots "$IPHONE_UUID" "iphone" "${SELECTED[@]}"
+take_device_screenshots "$IPAD_UUID" "ipad" "${SELECTED[@]}"
 
 echo ""
 echo "=== Screenshots saved to $SCREENSHOTS_DIR ==="

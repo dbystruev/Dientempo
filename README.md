@@ -55,4 +55,32 @@ Open `Dientempo.xcodeproj` in Xcode and run the `Dientempo` scheme on an iPhone 
 
 ## App Store Submission
 
-App Store materials are in `app-store/1.0/`, including promotional text, description, keywords, and screenshots.
+App Store materials are in `app-store/1.0/`, including promotional text, description, and keywords.
+
+## Taking Screenshots
+
+Screenshots are taken using `scripts/take-screenshots.sh`. They are saved to `screenshots/` (gitignored).
+
+```
+./scripts/take-screenshots.sh           # Take all screenshots
+./scripts/take-screenshots.sh 1 2       # Take specific screenshots
+./scripts/take-screenshots.sh 3,4,5     # Take screenshots 3, 4, and 5
+./scripts/take-screenshots.sh --help    # Show all options
+./scripts/take-screenshots.sh --list    # List available screenshots
+```
+
+Available screenshots:
+1. Warm-up screen (Calentando... button)
+2. Ready to count (0 / cero, Vamos button)
+3. Counting: number 5 / cinco
+4. Counting: number 42 / cuarenta y dos
+5. Counting: number 100 / cien
+6. Counting: number 150 / ciento cincuenta
+7. Paused (Alto button)
+8. Voice settings (Voz picker)
+
+After taking screenshots, copy them to the server:
+```
+scp screenshots/*.png bystruev.com:nginx-host/data/dientempo.bystruev.com/html/images/
+ssh bystruev.com "cd nginx-host && git add data/dientempo.bystruev.com/ && git commit -m 'Update screenshots' && git push"
+```
