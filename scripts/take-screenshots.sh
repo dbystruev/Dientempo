@@ -147,11 +147,14 @@ launch_app() {
 
 take_screenshot() {
     local uuid="$1"
-    local filename="$2"
-    local device_label="$3"
+    local num="$2"
+    local filename="$3"
+    local device_label="$4"
 
-    xcrun simctl io "$uuid" screenshot "$SCREENSHOTS_DIR/${device_label}-${filename}.png"
-    echo "   Saved: ${device_label}-${filename}.png"
+    # Format number with leading zero
+    local prefix=$(printf "%02d" "$num")
+    xcrun simctl io "$uuid" screenshot "$SCREENSHOTS_DIR/${prefix}_${device_label}-${filename}.png"
+    echo "   Saved: ${prefix}_${device_label}-${filename}.png"
 }
 
 take_device_screenshots() {
@@ -182,7 +185,7 @@ take_device_screenshots() {
         # Wait for app to load
         sleep 3
 
-        take_screenshot "$uuid" "$name" "$label"
+        take_screenshot "$uuid" "$num" "$name" "$label"
         echo ""
     done
 }
