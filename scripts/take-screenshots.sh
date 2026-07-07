@@ -10,6 +10,7 @@ SCREENSHOTS_DIR="$PROJECT_DIR/screenshots"
 
 # Device UUIDs
 IPHONE_UUID="C3CCA346-B895-4C12-A793-5091C999DC95"  # iPhone 17 Pro Max
+IPAD_UUID="1A890E4C-599E-4F19-A1B4-6CCC7B7D97B8"     # iPad Pro 13-inch (M5)
 
 # Screenshot definitions: number|name|description|launch_args
 # launch_args: arguments to pass to the app
@@ -195,6 +196,7 @@ parse_args "$@"
 
 if [[ "$BUILD_ONLY" == true ]]; then
     build_app "$IPHONE_UUID" "iphone"
+    build_app "$IPAD_UUID" "ipad"
     echo "Build complete."
     exit 0
 fi
@@ -211,6 +213,7 @@ done
 echo ""
 
 take_device_screenshots "$IPHONE_UUID" "iphone" "${SELECTED[@]}"
+take_device_screenshots "$IPAD_UUID" "ipad" "${SELECTED[@]}"
 
 echo ""
 echo "=== Screenshots saved to $SCREENSHOTS_DIR ==="
