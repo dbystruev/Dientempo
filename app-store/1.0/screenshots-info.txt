@@ -1,0 +1,17 @@
+Required screenshots:
+
+iPhone 6.5" Display:
+- 1242 x 2688 px (portrait) or 2688 x 1242 px (landscape)
+- 1284 x 2778 px (portrait) or 2778 x 1284 px (landscape)
+
+iPad 12.9" or 13" Display:
+- 2064 x 2752 px (portrait) or 2752 x 2064 px (landscape)
+- 2048 x 2732 px (portrait) or 2732 x 2048 px (landscape)
+
+Up to 3 app previews (video) allowed.
+
+Screenshot suggestions:
+1. Counting screen showing a number with Spanish words (e.g., "100" / "cien")
+2. Warm-up screen showing "Calentando..." button
+3. Voice settings screen showing available Spanish voices
+4. Counting screen in dark mode

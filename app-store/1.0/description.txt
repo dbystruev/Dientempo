@@ -1,0 +1,17 @@
+Dientempo is a simple iOS app that helps you learn Spanish numbers by counting aloud while you brush your teeth.
+
+The app counts from 0 to 200 in Spanish, showing each number as digits and words while speaking it aloud. The default session lasts about 3 minutes — the recommended brushing time.
+
+Features:
+- Clear Spanish pronunciation using high-quality system voices
+- Large, easy-to-read display with digits and Spanish words
+- Tap to pause/resume, swipe to skip forward or backward
+- Accelerating swipe for quick navigation
+- Automatic dark and light mode support
+- Voice selection for installed Spanish voices
+- Works completely offline — no internet required
+- Precise timing: each word finishes before the next begins
+
+The name Dientempo comes from Spanish "diente" (tooth) and "tiempo" (time) — tooth time.
+
+Whether you are a beginner learning your first Spanish numbers or brushing up on pronunciation, Dientempo makes it easy to practice every day without extra effort.
