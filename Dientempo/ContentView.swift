@@ -96,10 +96,17 @@ struct ContentView: View {
             counter.prepareSpeech()
 
             // Check for screenshot mode
-            if let screenshotArg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot=") }),
-               let numberStr = screenshotArg.components(separatedBy: "=").last,
-               let number = Int(numberStr) {
-                counter.setForScreenshot(number: number)
+            if let screenshotArg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot=") }) {
+                let parts = screenshotArg.components(separatedBy: "=")
+                if let numberStr = parts.last, let number = Int(numberStr) {
+                    let running = ProcessInfo.processInfo.arguments.contains("--screenshot-running")
+                    counter.setForScreenshot(number: number, running: running)
+                } else if parts.last == "voice" {
+                    // Show voice settings
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isShowingVoiceSettings = true
+                    }
+                }
             }
         }
         .onDisappear {

@@ -36,9 +36,9 @@ final class ToothCountingViewModel: ObservableObject {
         SpanishNumberFormatter.words(for: currentNumber)
     }
 
-    func setForScreenshot(number: Int) {
+    func setForScreenshot(number: Int, running: Bool = false) {
         currentNumber = number
-        state = .ready
+        state = running ? .running : .ready
         isWarmingUp = false
     }
 

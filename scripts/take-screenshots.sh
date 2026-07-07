@@ -11,12 +11,13 @@ SCREENSHOTS_DIR="$PROJECT_DIR/screenshots"
 # Device UUIDs
 IPHONE_UUID="C3CCA346-B895-4C12-A793-5091C999DC95"  # iPhone 17 Pro Max
 
-# Screenshot definitions: number|name|description|launch_number
-# launch_number: the number to show (0 = warmup/ready state, >0 = counting at that number)
+# Screenshot definitions: number|name|description|launch_args
+# launch_args: arguments to pass to the app
 SCREENSHOTS=(
-    "1|warmup|Warm-up screen (Calentando... button)|warmup"
-    "2|ready|Ready to count (0 / cero, Vamos button)|0"
-    "3|counting|Counting in progress (shows number 42)|42"
+    "1|warmup|Warm-up screen (Calentando... button)|--screenshot=warmup"
+    "2|ready|Ready to count (0 / cero, Vamos button)|--screenshot=0"
+    "3|counting|Counting in progress (Alto button, number 42)|--screenshot=42 --screenshot-running"
+    "4|voice|Voice settings (Voz picker)|--screenshot=voice"
 )
 
 show_help() {
@@ -134,15 +135,14 @@ install_app() {
 
 launch_app() {
     local uuid="$1"
-    local launch_number="$2"
+    local launch_args="$2"
 
-    if [[ "$launch_number" == "warmup" ]]; then
-        # Launch without arguments to show warmup state
-        xcrun simctl launch "$uuid" com.bystruev.dientempo
-    else
-        # Launch with screenshot argument
-        xcrun simctl launch "$uuid" com.bystruev.dientempo "--screenshot=$launch_number"
-    fi
+    # Build the command with all arguments
+    local cmd="xcrun simctl launch $uuid com.bystruev.dientempo"
+    for arg in $launch_args; do
+        cmd="$cmd $arg"
+    done
+    eval "$cmd"
 }
 
 take_screenshot() {
@@ -168,7 +168,7 @@ take_device_screenshots() {
     install_app "$uuid" "$label"
 
     for entry in "${selected[@]}"; do
-        IFS='|' read -r num name desc launch_number <<< "$entry"
+        IFS='|' read -r num name desc launch_args <<< "$entry"
 
         echo "Taking screenshot $num: $desc"
 
@@ -177,7 +177,7 @@ take_device_screenshots() {
         sleep 1
 
         # Launch app with appropriate arguments
-        launch_app "$uuid" "$launch_number"
+        launch_app "$uuid" "$launch_args"
 
         # Wait for app to load
         sleep 3
