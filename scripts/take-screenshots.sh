@@ -96,13 +96,13 @@ parse_args() {
 }
 
 find_simulator() {
-    local device_type="$1"
+    local device_name_pattern="$1"
     xcrun simctl list devices available -j | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 for runtime, devices in data['devices'].items():
     for d in devices:
-        if d['deviceType'] == '$device_type' and d['isAvailable']:
+        if '$device_name_pattern' in d['name'] and d['isAvailable']:
             print(d['udid'])
             sys.exit(0)
 print('')
@@ -204,8 +204,8 @@ take_device_screenshots() {
 parse_args "$@"
 
 # Find simulators dynamically
-IPHONE_UUID=$(find_simulator "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max")
-IPAD_UUID=$(find_simulator "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5")
+IPHONE_UUID=$(find_simulator "iPhone 17 Pro Max")
+IPAD_UUID=$(find_simulator "iPad Pro 13-inch")
 
 if [[ -z "$IPHONE_UUID" ]]; then
     echo "Error: iPhone 17 Pro Max simulator not found"
