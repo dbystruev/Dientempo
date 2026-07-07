@@ -94,6 +94,13 @@ struct ContentView: View {
         .onAppear {
             applyPowerPolicy()
             counter.prepareSpeech()
+
+            // Check for screenshot mode
+            if let screenshotArg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot=") }),
+               let numberStr = screenshotArg.components(separatedBy: "=").last,
+               let number = Int(numberStr) {
+                counter.setForScreenshot(number: number)
+            }
         }
         .onDisappear {
             shouldResumeAfterSceneInterruption = false
