@@ -61,6 +61,8 @@ App Store materials are in `app-store/1.0/`, including promotional text, descrip
 
 Screenshots are taken using `scripts/take-screenshots.sh`. They are saved to `screenshots/` (gitignored).
 
+The script automatically finds available iPhone and iPad simulators (iPhone 17 Pro Max and iPad Pro 13-inch M5). Different machines may have different simulators available.
+
 ```
 ./scripts/take-screenshots.sh           # Take all screenshots
 ./scripts/take-screenshots.sh 1 2       # Take specific screenshots
@@ -73,9 +75,3 @@ Available screenshots:
 2. Ready to count (0 / cero, Vamos button)
 3. Counting: number 42 / cuarenta y dos (Alto button)
 4. Voice settings (Voz picker)
-
-After taking screenshots, copy them to the server:
-```
-scp screenshots/iphone-*.png bystruev.com:nginx-host/data/dientempo.bystruev.com/html/images/
-ssh bystruev.com "cd nginx-host && git add data/dientempo.bystruev.com/ && git commit -m 'Update screenshots' && git push"
-```

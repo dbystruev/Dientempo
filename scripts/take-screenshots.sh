@@ -7,13 +7,9 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCHEME="Dientempo"
 BUILD_DIR="$PROJECT_DIR/build/screenshots"
 SCREENSHOTS_DIR="$PROJECT_DIR/screenshots"
-
-# Device UUIDs
-IPHONE_UUID="C3CCA346-B895-4C12-A793-5091C999DC95"  # iPhone 17 Pro Max
-IPAD_UUID="1A890E4C-599E-4F19-A1B4-6CCC7B7D97B8"     # iPad Pro 13-inch (M5)
+BUNDLE_ID="com.bystruev.dientempo"
 
 # Screenshot definitions: number|name|description|launch_args
-# launch_args: arguments to pass to the app
 SCREENSHOTS=(
     "1|warmup|Warm-up screen (Calentando... button)|--screenshot=warmup"
     "2|ready|Ready to count (0 / cero, Vamos button)|--screenshot=0"
@@ -38,7 +34,8 @@ Options:
 Screenshots:
   1  Warm-up screen (Calentando... button, grayed out)
   2  Ready to count (0 / cero, Vamos button)
-  3  Counting in progress (shows number 42 / cuarenta y dos)
+  3  Counting in progress (Alto button, number 42)
+  4  Voice settings (Voz picker)
 
 Examples:
   take-screenshots.sh 1 2      # Take screenshots 1 and 2
@@ -52,7 +49,7 @@ list_screenshots() {
     echo "Available screenshots:"
     echo ""
     for entry in "${SCREENSHOTS[@]}"; do
-        IFS='|' read -r num name desc launch_number <<< "$entry"
+        IFS='|' read -r num name desc launch_args <<< "$entry"
         echo "  $num  $name  $desc"
     done
 }
@@ -82,7 +79,7 @@ parse_args() {
             *)
                 if [[ "$1" =~ ^[0-9]+$ ]]; then
                     for entry in "${SCREENSHOTS[@]}"; do
-                        IFS='|' read -r num name desc launch_number <<< "$entry"
+                        IFS='|' read -r num name desc launch_args <<< "$entry"
                         if [[ "$num" == "$1" ]]; then
                             SELECTED+=("$entry")
                         fi
@@ -96,6 +93,20 @@ parse_args() {
     if [[ ${#SELECTED[@]} -eq 0 && "$BUILD_ONLY" == false ]]; then
         SELECTED=("${SCREENSHOTS[@]}")
     fi
+}
+
+find_simulator() {
+    local device_type="$1"
+    xcrun simctl list devices available -j | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for runtime, devices in data['devices'].items():
+    for d in devices:
+        if d['deviceType'] == '$device_type' and d['isAvailable']:
+            print(d['udid'])
+            sys.exit(0)
+print('')
+" 2>/dev/null || echo ""
 }
 
 build_app() {
@@ -138,8 +149,7 @@ launch_app() {
     local uuid="$1"
     local launch_args="$2"
 
-    # Build the command with all arguments
-    local cmd="xcrun simctl launch $uuid com.bystruev.dientempo"
+    local cmd="xcrun simctl launch $uuid $BUNDLE_ID"
     for arg in $launch_args; do
         cmd="$cmd $arg"
     done
@@ -152,7 +162,6 @@ take_screenshot() {
     local filename="$3"
     local device_label="$4"
 
-    # Format number with leading zero
     local prefix=$(printf "%02d" "$num")
     xcrun simctl io "$uuid" screenshot "$SCREENSHOTS_DIR/${prefix}_${device_label}-${filename}.png"
     echo "   Saved: ${prefix}_${device_label}-${filename}.png"
@@ -177,7 +186,7 @@ take_device_screenshots() {
         echo "Taking screenshot $num: $desc"
 
         # Terminate any existing instance
-        xcrun simctl terminate "$uuid" com.bystruev.dientempo 2>/dev/null || true
+        xcrun simctl terminate "$uuid" "$BUNDLE_ID" 2>/dev/null || true
         sleep 1
 
         # Launch app with appropriate arguments
@@ -194,6 +203,24 @@ take_device_screenshots() {
 # Main
 parse_args "$@"
 
+# Find simulators dynamically
+IPHONE_UUID=$(find_simulator "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max")
+IPAD_UUID=$(find_simulator "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5")
+
+if [[ -z "$IPHONE_UUID" ]]; then
+    echo "Error: iPhone 17 Pro Max simulator not found"
+    exit 1
+fi
+
+if [[ -z "$IPAD_UUID" ]]; then
+    echo "Error: iPad Pro 13-inch (M5) simulator not found"
+    exit 1
+fi
+
+echo "Using iPhone: $IPHONE_UUID"
+echo "Using iPad: $IPAD_UUID"
+echo ""
+
 if [[ "$BUILD_ONLY" == true ]]; then
     build_app "$IPHONE_UUID" "iphone"
     build_app "$IPAD_UUID" "ipad"
@@ -207,7 +234,7 @@ echo "=== Dientempo Screenshot Tool ==="
 echo ""
 echo "Screenshots to take: ${#SELECTED[@]}"
 for entry in "${SELECTED[@]}"; do
-    IFS='|' read -r num name desc launch_number <<< "$entry"
+    IFS='|' read -r num name desc launch_args <<< "$entry"
     echo "  $num. $desc"
 done
 echo ""
