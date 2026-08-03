@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# unclaim - promo code pool management
+#
+# Usage:
+#   unclaim <PROMO_CODE>   return a claimed promo code to the pool
+#   unclaim list           list claimed codes with date and status
+#   unclaim -h, --help     show this help
+#
+# Works both on the production server (Ubuntu/bash) and on a local
+# machine (macOS/zsh): when run locally it forwards itself to the
+# server via ssh.
+
+set -euo pipefail
+
+SERVER="oracle.getoutfit.net"
+DATA_FILE="/home/dbystruev/promo-api/data/promo_codes.json"
+
+usage() {
+    cat <<'HELP'
+Usage: unclaim <PROMO_CODE> | unclaim list | unclaim -h, --help
+
+Manage the Dientempo promo code pool on the production server.
+
+Commands:
+  <PROMO_CODE>  Return a claimed promo code to the available pool
+  list          Show claimed codes with claim date, IP, location, status
+  -h, --help    Show this help
+
+Runs both on the production server (Ubuntu/bash) and on a local
+machine (macOS/zsh): when run locally it forwards itself to the
+server via ssh.
+HELP
+}
+
+[ $# -ge 1 ] || { usage; exit 1; }
+
+case "$1" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    list)
+        COMMAND="list"
+        ;;
+    *)
+        COMMAND="return"
+        CODE="$1"
+        ;;
+esac
+
+# If we are not on the server, forward the script there
+if [ ! -f "$DATA_FILE" ]; then
+    ARGS=""
+    for a in "$@"; do
+        ARGS="$ARGS '$a'"
+    done
+    exec ssh "$SERVER" "bash -s -- $ARGS" < "$0"
+fi
+
+# From here on we are on the server
+[ -f "$DATA_FILE" ] || {
+    echo "Error: $DATA_FILE not found" >&2
+    exit 1
+}
+
+if [ "$COMMAND" = "list" ]; then
+    python3 <<'PY'
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+import urllib.request
+
+path = "/home/dbystruev/promo-api/data/promo_codes.json"
+cache_path = Path(os.environ.get("HOME", "/home/dbystruev")) / ".cache" / "unclaim-locations.json"
+
+with open(path) as f:
+    codes = json.load(f)
+
+claimed = [c for c in codes if c.get("claimed")]
+if not claimed:
+    print("No claimed codes")
+    sys.exit(0)
+
+cache = {}
+if cache_path.exists():
+    try:
+        with open(cache_path) as f:
+            cache = json.load(f)
+    except Exception:
+        cache = {}
+
+def fetch_locations(ips):
+    """Fetch locations for uncached IPs from ip-api.com batch endpoint."""
+    url = "http://ip-api.com/batch"
+    body = json.dumps([
+        {"query": ip, "fields": "status,message,country,countryCode,regionName,city,query"}
+        for ip in ips
+    ]).encode()
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read())
+    except Exception:
+        return None
+
+missing = [ip for ip in {c.get("claimed_ip") for c in claimed if c.get("claimed_ip")}
+           if ip not in cache]
+if missing:
+    for item in fetch_locations(missing) or []:
+        if not item or item.get("status") != "success":
+            continue
+        ip = item.get("query")
+        if ip:
+            cache[ip] = item
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w") as f:
+        json.dump(cache, f)
+
+def location(ip):
+    if not ip:
+        return "-"
+    item = cache.get(ip, {})
+    if not item or item.get("status") != "success":
+        return "-"
+    parts = [p for p in (item.get("city"), item.get("regionName"), item.get("country")) if p]
+    return ", ".join(parts) if parts else "-"
+
+def fmt(ts):
+    if not ts:
+        return "-"
+    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+print(f"{'CODE':<16}{'CLAIMED AT (UTC)':<22}{'IP':<18}{'LOCATION':<36}{'STATUS':<10}DETAILS")
+print(f"{'-'*16}{'-'*22}{'-'*18}{'-'*36}{'-'*10}{'-'*30}")
+for c in claimed:
+    code = c.get("code", "?")
+    ts = fmt(c.get("claimed_at"))
+    ip = c.get("claimed_ip") or "-"
+    loc = location(c.get("claimed_ip"))
+    if c.get("redeemed"):
+        status, details = "redeemed", "used in App Store"
+    else:
+        status, details = "claimed", "not yet redeemed"
+    print(f"{code:<16}{ts:<22}{ip:<18}{loc:<36}{status:<10}{details}")
+
+available = sum(1 for c in codes if not c.get("claimed") and not c.get("redeemed"))
+print(f"\nAvailable: {available} | Claimed: {len(claimed)} | Total: {len(codes)}")
+PY
+    exit $?
+fi
+
+python3 - "$CODE" <<'PY'
+import json
+import sys
+
+code = sys.argv[1]
+path = "/home/dbystruev/promo-api/data/promo_codes.json"
+
+with open(path) as f:
+    codes = json.load(f)
+
+entry = next((c for c in codes if c.get("code") == code), None)
+if entry is None:
+    print(f"Error: code {code} not found in the pool")
+    sys.exit(1)
+if entry.get("redeemed"):
+    print(f"Error: code {code} was already redeemed in App Store, cannot return it")
+    sys.exit(1)
+if not entry.get("claimed"):
+    print(f"Code {code} is already available in the pool")
+    sys.exit(0)
+
+entry["claimed"] = False
+entry["claimed_at"] = None
+entry["claimed_ip"] = None
+with open(path, "w") as f:
+    json.dump(codes, f)
+
+print(f"Code {code} returned to the available pool")
+PY
