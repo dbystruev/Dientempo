@@ -1,0 +1,173 @@
+default_platform(:ios)
+
+# Shared App Store Connect API key setup. This is the SAME key used by
+# PlantIdentify-iOS and other apps under the "Human Rated AI" team
+# (8J39KF9DMS) -- App Store Connect API keys are scoped to the whole team,
+# not to a single app, so one key with App Manager/Admin access can manage
+# every app the team owns (confirmed: this key can see all 16 of the
+# team's apps, including Dientempo, App Store Connect app id 6780648670).
+# CI uses secrets ASC_* ; local uses ~/Documents/... fallback, mirroring
+# PlantIdentify-iOS/fastlane/Fastfile.
+def dientempo_api_key
+  if ENV["ASC_PRIVATE_KEY"] && !ENV["ASC_PRIVATE_KEY"].empty?
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"] || "CDCJAGN567",
+      issuer_id: ENV["ASC_ISSUER_ID"] || "69a6de90-d3c4-47e3-e053-5b8c7c11a4d1",
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      is_key_content_base64: false,
+      duration: 1200,
+      in_house: false
+    )
+  else
+    app_store_connect_api_key(
+      key_id: "CDCJAGN567",
+      issuer_id: "69a6de90-d3c4-47e3-e053-5b8c7c11a4d1",
+      key_filepath: File.expand_path("~/Documents/Apple/Keys/Dientempo/AuthKey_CDCJAGN567.p8"),
+      duration: 1200,
+      in_house: false
+    )
+  end
+end
+
+def dientempo_token
+  require 'spaceship'
+  if ENV["ASC_PRIVATE_KEY"] && !ENV["ASC_PRIVATE_KEY"].empty?
+    require 'tempfile'
+    tf = Tempfile.new(['AuthKey', '.p8'])
+    tf.write(ENV["ASC_PRIVATE_KEY"]); tf.close
+    Spaceship::ConnectAPI::Token.create(
+      key_id: ENV["ASC_KEY_ID"] || "CDCJAGN567",
+      issuer_id: ENV["ASC_ISSUER_ID"] || "69a6de90-d3c4-47e3-e053-5b8c7c11a4d1",
+      filepath: tf.path,
+      duration: 1200,
+      in_house: false
+    )
+  else
+    Spaceship::ConnectAPI::Token.create(
+      key_id: "CDCJAGN567",
+      issuer_id: "69a6de90-d3c4-47e3-e053-5b8c7c11a4d1",
+      filepath: File.expand_path("~/Documents/Apple/Keys/Dientempo/AuthKey_CDCJAGN567.p8"),
+      duration: 1200,
+      in_house: false
+    )
+  end
+end
+
+def dientempo_app(token)
+  Spaceship::ConnectAPI.token = token
+  apps = Spaceship::ConnectAPI::App.all
+  app = apps.find { |a| a.bundle_id == "com.bystruev.dientempo" } || Spaceship::ConnectAPI::App.find("6780648670")
+  UI.user_error!("Could not find app com.bystruev.dientempo / 6780648670") if app.nil?
+  app
+end
+
+desc "Print the latest TestFlight build's CFBundleVersion (date-based, e.g. 2026.09.05)"
+lane :latest_build_number do
+  app = dientempo_app(dientempo_token)
+  builds = app.get_builds
+  # Dientempo uses date-based build numbers (YYYY.MM.DD), not sequential
+  # integers -- keep that convention rather than switching to PlantIdentify's
+  # incrementing-integer scheme. build.sh compares this against today's date
+  # and bumps forward if they'd collide.
+  latest = builds.map(&:version).compact.sort.last
+  UI.message("Latest TestFlight build for com.bystruev.dientempo: #{latest || '(none)'}")
+  puts "LATEST_BUILD=#{latest || ''}"
+end
+
+platform :ios do
+  desc "Retry uploading an already-built .ipa (no rebuild) after network failure"
+  lane :retry_upload do
+    ipa_path = ENV["IPA_PATH"] || File.expand_path("Dientempo.ipa", __dir__ + "/..")
+    UI.user_error!("IPA not found at #{ipa_path} -- rebuild first") unless File.exist?(ipa_path)
+    api_key = dientempo_api_key
+    UI.message("Uploading #{ipa_path} ...")
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      uses_non_exempt_encryption: false
+    )
+    expire_old_builds
+  end
+
+  desc "Build and upload to TestFlight (com.bystruev.dientempo)"
+  lane :beta do
+    api_key = dientempo_api_key
+
+    # Build number is set by scripts/build.sh BEFORE this lane runs (date-based,
+    # YYYY.MM.DD, bumped forward if today's date collides with the latest build
+    # already on TestFlight). Do NOT call increment_build_number here -- it
+    # would stomp the value build.sh just set.
+
+    setup_ci if is_ci
+
+    build_app(
+      project: "Dientempo.xcodeproj",
+      scheme: "Dientempo",
+      export_method: "app-store",
+      include_symbols: true,
+      include_bitcode: false,
+      xcargs: "-allowProvisioningUpdates"
+    )
+
+    changelog_text = File.read(File.expand_path("changelog.txt", __dir__)) rescue "Dientempo -- Spanish number counting while brushing your teeth"
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      uses_non_exempt_encryption: false,
+      changelog: changelog_text
+    )
+  end
+
+  desc "Expire previous TestFlight builds except latest and externally approved"
+  lane :expire_old_builds do
+    require 'set'
+    token = dientempo_token
+    app = dientempo_app(token)
+    builds = app.get_builds
+    UI.message("Found #{builds.count} builds for #{app.name}")
+    sorted = builds.sort_by { |b| b.uploaded_date || b.id }.reverse
+    keep_ids = Set.new
+    latest = sorted.first
+    keep_ids.add(latest.id) if latest
+    UI.message("Keeping latest build #{latest.version} (uploaded #{latest.uploaded_date})") if latest
+    begin
+      beta_groups = app.respond_to?(:get_beta_groups) ? app.get_beta_groups : []
+      external = beta_groups.select { |g| (g.is_internal_group == false rescue false) }
+      UI.message("External groups: #{external.map(&:name).join(', ')}")
+      require 'spaceship/connect_api/api_client'
+      client = Spaceship::ConnectAPI::APIClient.new(token: token)
+      external.each do |grp|
+        begin
+          UI.message("Group #{grp.name} id=#{grp.id.inspect}")
+          resp = client.get("v1/betaGroups/#{grp.id}/builds")
+          data = resp.respond_to?(:body) ? resp.body["data"] : resp["data"]
+          builds_in_group = (data || []).map { |b| b["id"] }
+          keep_ids.merge(builds_in_group)
+          UI.message("Keeping #{builds_in_group.size} external build(s) from #{grp.name}")
+        rescue => e
+          UI.message("Could not fetch builds for group #{grp.name}: #{e}")
+        end
+      end
+    rescue => e
+      UI.message("BetaGroup fetch skipped: #{e}")
+    end
+    expired = 0
+    builds.each do |b|
+      next if keep_ids.include?(b.id)
+      next if b.expired
+      begin
+        UI.message("Expiring build #{b.version} id=#{b.id[0..8]} ...")
+        b.expire!
+        expired += 1
+      rescue => e
+        UI.error("Failed to expire #{b.version}: #{e}")
+      end
+    end
+    UI.success("Expired #{expired} builds, kept #{keep_ids.size} (latest #{latest&.version} + external)")
+  end
+end

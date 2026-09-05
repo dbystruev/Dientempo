@@ -1,0 +1,19 @@
+Dientempo -- What to Test
+
+Welcome to the TestFlight build! Dientempo counts 0-200 out loud in Spanish while you
+brush your teeth, timed to a ~2 minute session.
+
+What testers should verify:
+1. Launch app -> tap "Vamos" -> counting starts at "cero", speech is audible
+2. Let it run a few numbers -> tap the number/words area to pause/resume
+3. Swipe left/right on the number -> verify it jumps forward/back and keeps counting
+4. Tap "Voz" (only visible when stopped) -> pick a different Spanish voice, verify it's used
+5. Let a session run to completion (200) -> verify it stops cleanly
+6. Background the app mid-count, then return -> verify it resumes correctly
+7. Free-tier limit: run once, then try to start a second session the same day -> verify the
+   lock screen appears with a live countdown to midnight
+8. From the lock screen, tap "Unlimited Access" -> verify the App Store purchase sheet opens
+   (a sandbox purchase should succeed if you're signed in with a Sandbox Tester account)
+9. Tap "Restore Purchase" -> verify a previous purchase is restored correctly
+
+Report crashes / issues via TestFlight feedback.

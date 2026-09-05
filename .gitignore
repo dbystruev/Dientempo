@@ -8,3 +8,10 @@ build/
 DerivedData*/
 screenshots/
 xcuserdata/
+
+# Build artifacts (fastlane)
+*.ipa
+*.dSYM.zip
+*.log
+fastlane/report.xml
+fastlane/README.md
