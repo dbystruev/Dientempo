@@ -15,6 +15,15 @@ final class ToothCountingViewModel: ObservableObject {
     @Published private(set) var state: SessionState = .ready
     @Published private(set) var isWarmingUp = true
 
+    /// Invoked exactly once whenever a session transitions from `.ready` or
+    /// `.finished` into `.running` -- i.e. a genuinely new run began, no matter
+    /// which gesture (button, tap, or swipe) triggered it. Used by `ContentView`
+    /// to record the free-tier daily run without being tied to a single button,
+    /// which would otherwise let the daily limit be bypassed via tap/swipe.
+    /// Resuming after a background interruption, or nudging the number while
+    /// already running/paused, do NOT trigger this.
+    var onSessionWillStart: (() -> Void)?
+
     private let speaker = SpanishNumberSpeaker()
     private var activeSessionID = UUID()
     private var sessionStartTime: Date?
@@ -148,10 +157,16 @@ final class ToothCountingViewModel: ObservableObject {
     }
 
     private func startCounting(from firstNumber: Int) {
+        let isFreshStart = state == .ready || state == .finished
+
         activeSessionID = UUID()
         state = .running
         lastNumberSpokenTime = Date()
         let sessionID = activeSessionID
+
+        if isFreshStart {
+            onSessionWillStart?()
+        }
 
         speaker.prepareForCounting { [weak self] in
             guard let self else { return }
