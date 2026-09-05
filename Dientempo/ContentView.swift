@@ -4,8 +4,12 @@ import UIKit
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var counter = ToothCountingViewModel()
+    @StateObject private var premiumManager = PremiumManager.shared
+    @StateObject private var purchaseManager = PurchaseManager.shared
     @State private var isShowingVoiceSettings = false
     @State private var shouldResumeAfterSceneInterruption = false
+    @State private var remainingTime: TimeInterval = 0
+    @State private var countdownTimer: Timer? = nil
 
     var body: some View {
         GeometryReader { proxy in
@@ -13,86 +17,16 @@ struct ContentView: View {
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
-                let gesturesEnabled = !counter.isWarmingUp
-
-                VStack(spacing: 0) {
-                    Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.06))
-
-                    Text("\(counter.currentNumber)")
-                        .font(.system(size: digitFontSize(in: proxy.size), weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(Color(.label))
-                        .minimumScaleFactor(0.15)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: digitAreaHeight(in: proxy.size))
-                        .contentShape(Rectangle())
-                        .accessibilityLabel(counter.currentWords)
-                        .onTapGesture {
-                            togglePause()
-                        }
-                        .gesture(swipeGesture)
-                        .disabled(!gesturesEnabled)
-
-                    Text(counter.currentWords)
-                        .font(.system(size: wordsFontSize(in: proxy.size), weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color(.label))
-                        .multilineTextAlignment(.center)
-                        .lineLimit(4)
-                        .minimumScaleFactor(0.5)
-                        .allowsTightening(false)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: wordsAreaHeight(in: proxy.size))
-                        .contentShape(Rectangle())
-                        .accessibilityHidden(true)
-                        .onTapGesture {
-                            togglePause()
-                        }
-                        .gesture(swipeGesture)
-                        .disabled(!gesturesEnabled)
-
-                    Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.04))
-
-                    Button {
-                        startOrStopCounting()
-                    } label: {
-                        if counter.isWarmingUp {
-                            Text("Calentando...")
-                                .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: buttonHeight(in: proxy.size))
-                        } else {
-                            Text(counter.isCounting ? "Alto" : "Vamos")
-                                .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: buttonHeight(in: proxy.size))
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: 8))
-                    .tint(counter.isWarmingUp ? .gray : (counter.isCounting ? .red : .teal))
-                    .disabled(counter.isWarmingUp)
-                    .accessibilityLabel(counter.isWarmingUp ? "Calentando" : (counter.isCounting ? "Alto" : "Vamos"))
-
-                    ZStack(alignment: .top) {
-                        if !counter.isCounting && !counter.isWarmingUp {
-                            Button("Voz") {
-                                isShowingVoiceSettings = true
-                            }
-                            .font(.system(size: voiceLinkFontSize(in: proxy.size), weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color(.secondaryLabel))
-                            .padding(.top, 16)
-                        }
-                    }
-                    .frame(height: voiceAreaHeight(in: proxy.size), alignment: .top)
+                if premiumManager.canRun {
+                    mainContent(proxy: proxy)
+                } else {
+                    lockScreenView(proxy: proxy)
                 }
-                .padding(.horizontal, horizontalPadding(in: proxy.size))
-                .padding(.bottom, max(24, proxy.safeAreaInsets.bottom + 16))
-                .padding(.top, max(16, proxy.safeAreaInsets.top))
             }
         }
         .onAppear {
             applyPowerPolicy()
+            wireSessionStartRecording()
 
             // Check for screenshot mode
             if let screenshotArg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot=") }) {
@@ -115,11 +49,14 @@ struct ContentView: View {
             } else {
                 counter.prepareSpeech()
             }
+
+            startCountdownTimer()
         }
         .onDisappear {
             shouldResumeAfterSceneInterruption = false
             allowIdleTimer()
             counter.stop()
+            stopCountdownTimer()
         }
         .onChange(of: counter.state) { _ in
             applyPowerPolicy()
@@ -133,12 +70,14 @@ struct ContentView: View {
 
                 shouldResumeAfterSceneInterruption = false
                 applyPowerPolicy()
+                startCountdownTimer()
             case .inactive, .background:
                 if counter.isRunning {
                     shouldResumeAfterSceneInterruption = true
                     counter.pauseForInterruption()
                 }
                 allowIdleTimer()
+                stopCountdownTimer()
             @unknown default:
                 break
             }
@@ -147,6 +86,203 @@ struct ContentView: View {
             VoiceSettingsView()
         }
     }
+
+    // MARK: - Main content (the original UI, unchanged)
+
+    @ViewBuilder
+    private func mainContent(proxy: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.06))
+
+            Text("\(counter.currentNumber)")
+                .font(.system(size: digitFontSize(in: proxy.size), weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Color(.label))
+                .minimumScaleFactor(0.15)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+                .frame(height: digitAreaHeight(in: proxy.size))
+                .contentShape(Rectangle())
+                .accessibilityLabel(counter.currentWords)
+                .onTapGesture {
+                    togglePause()
+                }
+                .gesture(swipeGesture)
+                .disabled(!gesturesEnabled)
+
+            Text(counter.currentWords)
+                .font(.system(size: wordsFontSize(in: proxy.size), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color(.label))
+                .multilineTextAlignment(.center)
+                .lineLimit(4)
+                .minimumScaleFactor(0.5)
+                .allowsTightening(false)
+                .frame(maxWidth: .infinity)
+                .frame(height: wordsAreaHeight(in: proxy.size))
+                .contentShape(Rectangle())
+                .accessibilityHidden(true)
+                .onTapGesture {
+                    togglePause()
+                }
+                .gesture(swipeGesture)
+                .disabled(!gesturesEnabled)
+
+            Spacer(minLength: verticalGap(in: proxy.size, ratio: 0.04))
+
+            Button {
+                startOrStopCounting()
+            } label: {
+                if counter.isWarmingUp {
+                    Text("Calentando...")
+                        .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: buttonHeight(in: proxy.size))
+                } else {
+                    Text(counter.isCounting ? "Alto" : "Vamos")
+                        .font(.system(size: buttonFontSize(in: proxy.size), weight: .bold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: buttonHeight(in: proxy.size))
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 8))
+            .tint(counter.isWarmingUp ? .gray : (counter.isCounting ? .red : .teal))
+            .disabled(counter.isWarmingUp)
+            .accessibilityLabel(counter.isWarmingUp ? "Calentando" : (counter.isCounting ? "Alto" : "Vamos"))
+
+            ZStack(alignment: .top) {
+                if !counter.isCounting && !counter.isWarmingUp {
+                    Button("Voz") {
+                        isShowingVoiceSettings = true
+                    }
+                    .font(.system(size: voiceLinkFontSize(in: proxy.size), weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .padding(.top, 16)
+                }
+            }
+            .frame(height: voiceAreaHeight(in: proxy.size), alignment: .top)
+        }
+        .padding(.horizontal, horizontalPadding(in: proxy.size))
+        .padding(.bottom, max(24, proxy.safeAreaInsets.bottom + 16))
+        .padding(.top, max(16, proxy.safeAreaInsets.top))
+    }
+
+    // MARK: - Lock screen (shown once the free daily run is used up)
+
+    @ViewBuilder
+    private func lockScreenView(proxy: GeometryProxy) -> some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Text("Dientempo")
+                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(.label))
+
+            Text("Brush your teeth")
+                .font(.title2)
+                .foregroundStyle(Color(.secondaryLabel))
+
+            Text("Available again in")
+                .font(.headline)
+                .foregroundStyle(Color(.secondaryLabel))
+
+            Text(premiumManager.countdownString())
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Color(.label))
+                .padding(.vertical, 8)
+                .accessibilityLabel("Available again in \(premiumManager.countdownString())")
+
+            Spacer(minLength: 24)
+
+            Button {
+                purchaseManager.purchase()
+            } label: {
+                HStack(spacing: 8) {
+                    if purchaseManager.isLoading {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                    Text("Unlimited Access — $4.99")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: buttonHeight(in: proxy.size))
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .tint(.teal)
+            .disabled(purchaseManager.premiumProduct == nil)
+
+            Button("Restore Purchase") {
+                purchaseManager.restore()
+            }
+            .font(.callout)
+            .foregroundStyle(Color(.systemBlue))
+            .padding(.top, 4)
+
+            if let error = purchaseManager.lastError {
+                Text(error.localizedDescription)
+                    .font(.caption)
+                    .foregroundStyle(Color(.red))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+
+            if purchaseManager.restoreCompleted {
+                Text("Purchase restored.")
+                    .font(.caption)
+                    .foregroundStyle(Color(.green))
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, horizontalPadding(in: proxy.size))
+        .padding(.bottom, max(24, proxy.safeAreaInsets.bottom + 16))
+        .padding(.top, max(16, proxy.safeAreaInsets.top))
+    }
+
+    // MARK: - Daily-limit wiring
+
+    /// Single choke point that records a free-tier run. Wired once here rather
+    /// than in `startOrStopCounting()` so that starting a session via tap or
+    /// swipe (not just the "Vamos" button) still counts against the daily
+    /// limit — see `ToothCountingViewModel.onSessionWillStart`.
+    private func wireSessionStartRecording() {
+        counter.onSessionWillStart = {
+            PremiumManager.shared.recordRun()
+        }
+    }
+
+    // MARK: - Countdown timer
+
+    private func startCountdownTimer() {
+        stopCountdownTimer()
+        guard !premiumManager.canRun else { return }
+
+        remainingTime = premiumManager.timeRemaining()
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                // Force `body` to re-evaluate `premiumManager.canRun` every tick.
+                // `canRun` depends on the wall clock, not just `@Published`
+                // storage, so without this the lock screen would not flip back
+                // to the main UI on its own once midnight passes.
+                premiumManager.objectWillChange.send()
+                remainingTime = premiumManager.timeRemaining()
+
+                if premiumManager.canRun {
+                    stopCountdownTimer()
+                }
+            }
+        }
+    }
+
+    private func stopCountdownTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+
+    // MARK: - Start / stop counting
 
     private func startOrStopCounting() {
         shouldResumeAfterSceneInterruption = false
@@ -182,6 +318,10 @@ struct ContentView: View {
         #if DEBUG
         NSLog("[DientempoPower] %@", message())
         #endif
+    }
+
+    private var gesturesEnabled: Bool {
+        !counter.isWarmingUp
     }
 
     private var swipeGesture: some Gesture {
