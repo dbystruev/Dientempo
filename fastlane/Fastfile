@@ -119,6 +119,12 @@ platform :ios do
     if changelog_text.nil? || changelog_text.strip.empty?
       changelog_text = File.read(File.expand_path("changelog.txt", __dir__)) rescue "Dientempo -- Spanish number counting while brushing your teeth"
     end
+    # ENV values are tagged ASCII-8BIT/BINARY by Ruby regardless of actual
+    # content, which crashes later UTF-8 regex matching on non-ASCII bytes
+    # (build.sh's generated text includes an em dash). The bytes are already
+    # valid UTF-8 (bash wrote them that way) -- just retag them so Ruby
+    # treats them as such instead of re-encoding.
+    changelog_text = changelog_text.dup.force_encoding(Encoding::UTF_8)
     upload_to_testflight(
       api_key: api_key,
       skip_waiting_for_build_processing: true,
