@@ -112,7 +112,13 @@ platform :ios do
       xcargs: "-allowProvisioningUpdates"
     )
 
-    changelog_text = File.read(File.expand_path("changelog.txt", __dir__)) rescue "Dientempo -- Spanish number counting while brushing your teeth"
+    # build.sh sets CHANGELOG_TEXT dynamically from git history since the
+    # previous TestFlight upload (see scripts/build.sh). Fall back to the
+    # static fastlane/changelog.txt for a manual `fastlane beta` run.
+    changelog_text = ENV["CHANGELOG_TEXT"]
+    if changelog_text.nil? || changelog_text.strip.empty?
+      changelog_text = File.read(File.expand_path("changelog.txt", __dir__)) rescue "Dientempo -- Spanish number counting while brushing your teeth"
+    end
     upload_to_testflight(
       api_key: api_key,
       skip_waiting_for_build_processing: true,

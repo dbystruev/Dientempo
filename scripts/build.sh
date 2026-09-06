@@ -157,6 +157,46 @@ if not changed:
 print(f"project.pbxproj updated: CURRENT_PROJECT_VERSION = {new_build}, MARKETING_VERSION = {new_marketing}")
 PYEOF
 
+# Generate "What to Test" from git commits since the previous TestFlight
+# upload, so testers see what actually changed instead of a static blurb.
+# Each successful upload gets tagged testflight-<build-number> (below); this
+# finds the most recent such tag reachable from HEAD and logs everything
+# since then. First-ever run (no prior tag) falls back to the last 20
+# commits so the range can't blow up to the whole repo history.
+echo "Generating changelog from git history..."
+LAST_TESTFLIGHT_TAG="$(git describe --tags --match 'testflight-*' --abbrev=0 HEAD 2>/dev/null || true)"
+if [[ -n "$LAST_TESTFLIGHT_TAG" ]]; then
+  COMMIT_RANGE="${LAST_TESTFLIGHT_TAG}..HEAD"
+  echo "Changes since $LAST_TESTFLIGHT_TAG:"
+else
+  COMMIT_RANGE="-20"
+  echo "No previous testflight-* tag found — using last 20 commits:"
+fi
+
+# Drop this script's own version-bump commits (noise, not a real change) and
+# merge commits; keep just the one-line subject of everything else.
+CHANGE_LINES="$(git log $COMMIT_RANGE --no-merges --pretty=format:'%s' | grep -v '^chore: TestFlight build' | sed 's/^/- /' || true)"
+
+if [[ -z "$CHANGE_LINES" ]]; then
+  CHANGE_LINES="- No functional changes since the previous TestFlight build (re-upload)."
+fi
+echo "$CHANGE_LINES"
+
+CHANGELOG_TEXT="Dientempo ${NEXT_MARKETING_VERSION} (build ${NEXT_BUILD}) — What to Test
+
+${CHANGE_LINES}
+
+Report crashes / issues via TestFlight feedback."
+
+# TestFlight's "What to Test" field has a ~4000 character limit per App
+# Store Connect; truncate defensively so a very active period between
+# uploads can't fail the upload over changelog length.
+if (( ${#CHANGELOG_TEXT} > 3900 )); then
+  CHANGELOG_TEXT="${CHANGELOG_TEXT:0:3880}
+... (truncated — see git log for the full history)"
+fi
+export CHANGELOG_TEXT
+
 echo "Running $FASTLANE_BIN beta..."
 "$FASTLANE_BIN" beta
 BETA_STATUS=$?
@@ -180,6 +220,18 @@ else
   MARKETING_VERSION="$(xcodebuild -showBuildSettings -project Dientempo.xcodeproj -scheme Dientempo -configuration Release 2>/dev/null | sed -n 's/.*MARKETING_VERSION = //p' | head -1)"
   git commit -m "chore: TestFlight build ${MARKETING_VERSION:-?} (${NEXT_BUILD}) — expire old, push after upload" || echo "Commit failed" >&2
   git push || echo "Push failed — push manually" >&2
+fi
+
+# Tag this upload so the next run's changelog range starts here. Uses the
+# build number (always unique/increasing) as the tag suffix, regardless of
+# whether the branch above found something to commit — HEAD already
+# reflects everything uploaded either way.
+TAG_NAME="testflight-${NEXT_BUILD}"
+if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+  echo "Tag $TAG_NAME already exists — skipping."
+else
+  git tag "$TAG_NAME" || echo "Tagging failed — tag manually: git tag $TAG_NAME" >&2
+  git push origin "$TAG_NAME" || echo "Tag push failed — push manually: git push origin $TAG_NAME" >&2
 fi
 
 echo "Done — check https://appstoreconnect.apple.com/teams/69a6de90-d3c4-47e3-e053-5b8c7c11a4d1/apps/6780648670/testflight"
