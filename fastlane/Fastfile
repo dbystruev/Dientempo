@@ -123,7 +123,7 @@ platform :ios do
     )
   end
 
-  desc "Expire previous TestFlight builds except latest and externally approved"
+  desc "Expire previous TestFlight builds except the latest and the live public-link build"
   lane :expire_old_builds do
     require 'set'
     token = dientempo_token
@@ -132,23 +132,37 @@ platform :ios do
     UI.message("Found #{builds.count} builds for #{app.name}")
     sorted = builds.sort_by { |b| b.uploaded_date || b.id }.reverse
     keep_ids = Set.new
+
+    # Always keep the just-uploaded build itself, even though it hasn't been
+    # through Beta App Review / added to the public-link group yet -- it's
+    # not eligible to be *removed* from the public link either way.
     latest = sorted.first
     keep_ids.add(latest.id) if latest
     UI.message("Keeping latest build #{latest.version} (uploaded #{latest.uploaded_date})") if latest
+
+    # Keep whichever build is currently live on the PUBLIC LINK specifically
+    # (public_link_enabled == true), not any external group in general --
+    # a named-external-tester-only group without a public link doesn't need
+    # the same protection, since there's no public URL that would break.
+    # An already-expired build doesn't need protecting either (nothing to
+    # protect -- it's already gone), so only non-expired group members
+    # actually matter here.
     begin
       beta_groups = app.respond_to?(:get_beta_groups) ? app.get_beta_groups : []
-      external = beta_groups.select { |g| (g.is_internal_group == false rescue false) }
-      UI.message("External groups: #{external.map(&:name).join(', ')}")
+      public_link_groups = beta_groups.select { |g| (g.public_link_enabled == true rescue false) }
+      UI.message("Public-link groups: #{public_link_groups.map(&:name).join(', ')}")
       require 'spaceship/connect_api/api_client'
       client = Spaceship::ConnectAPI::APIClient.new(token: token)
-      external.each do |grp|
+      builds_by_id = builds.each_with_object({}) { |b, h| h[b.id] = b }
+      public_link_groups.each do |grp|
         begin
-          UI.message("Group #{grp.name} id=#{grp.id.inspect}")
+          UI.message("Group #{grp.name} id=#{grp.id.inspect} link=#{grp.public_link rescue 'n/a'}")
           resp = client.get("v1/betaGroups/#{grp.id}/builds")
           data = resp.respond_to?(:body) ? resp.body["data"] : resp["data"]
           builds_in_group = (data || []).map { |b| b["id"] }
-          keep_ids.merge(builds_in_group)
-          UI.message("Keeping #{builds_in_group.size} external build(s) from #{grp.name}")
+          live_in_group = builds_in_group.select { |id| builds_by_id[id] && !builds_by_id[id].expired }
+          keep_ids.merge(live_in_group)
+          UI.message("Keeping #{live_in_group.size} non-expired build(s) live on #{grp.name}'s public link")
         rescue => e
           UI.message("Could not fetch builds for group #{grp.name}: #{e}")
         end
@@ -156,6 +170,7 @@ platform :ios do
     rescue => e
       UI.message("BetaGroup fetch skipped: #{e}")
     end
+
     expired = 0
     builds.each do |b|
       next if keep_ids.include?(b.id)
@@ -168,6 +183,6 @@ platform :ios do
         UI.error("Failed to expire #{b.version}: #{e}")
       end
     end
-    UI.success("Expired #{expired} builds, kept #{keep_ids.size} (latest #{latest&.version} + external)")
+    UI.success("Expired #{expired} builds, kept #{keep_ids.size} (latest #{latest&.version} + live public-link build(s))")
   end
 end
