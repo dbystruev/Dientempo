@@ -54,7 +54,12 @@ fi
 # so the build number still strictly increases as TestFlight requires.
 echo "Resolving next build number..."
 TODAY="$(date +%F | tr '-' '.')"   # e.g. 2026.09.05
-LATEST_BUILD="$("$FASTLANE_BIN" latest_build_number 2>/dev/null | sed -n 's/^LATEST_BUILD=//p' || true)"
+# NOTE: fastlane's logger prefixes every `puts` line with "[HH:MM:SS]: ",
+# so the pattern must NOT be anchored to start-of-line (a "^LATEST_BUILD="
+# anchor silently matched nothing on every run so far -- this always fell
+# back to today's date, which is why build 2026.09.05 was uploaded twice
+# under two different marketing versions before this was caught).
+LATEST_BUILD="$("$FASTLANE_BIN" latest_build_number 2>/dev/null | sed -n 's/.*LATEST_BUILD=//p' | tail -1 || true)"
 
 version_ge() {
   # Returns 0 (true) if $1 >= $2, comparing YYYY.MM.DD numerically component-by-component.
