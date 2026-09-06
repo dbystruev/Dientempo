@@ -83,18 +83,48 @@ else
 fi
 echo "Latest on TestFlight: ${LATEST_BUILD:-(none)} · Today: $TODAY · Using: $NEXT_BUILD"
 
-echo "Setting CURRENT_PROJECT_VERSION → $NEXT_BUILD"
-python3 - "$NEXT_BUILD" << 'PYEOF'
+# Resolve the next MARKETING_VERSION (x.y.z, each of y/z wraps 0-9 then
+# carries into the next component; x is uncapped once y and z both roll
+# over past 9). Bumped automatically on every run so each TestFlight build
+# gets its own never-before-used version string — App Store Connect
+# permanently closes a version string once it's been used/abandoned (this is
+# exactly what broke the first upload attempt: MARKETING_VERSION was stuck
+# at the already-closed "1.4"), so auto-incrementing avoids ever colliding
+# with a past value as long as this script stays the single source of truth
+# for bumping it.
+echo "Resolving next marketing version..."
+CURRENT_MARKETING_VERSION="$(xcodebuild -showBuildSettings -project Dientempo.xcodeproj -scheme Dientempo -configuration Release 2>/dev/null | sed -n 's/.*MARKETING_VERSION = //p' | head -1)"
+CURRENT_MARKETING_VERSION="${CURRENT_MARKETING_VERSION:-0.0.0}"
+
+IFS='.' read -r mx my mz <<< "$CURRENT_MARKETING_VERSION"
+mx=${mx:-0}; my=${my:-0}; mz=${mz:-0}
+mx=$((10#$mx)); my=$((10#$my)); mz=$((10#$mz))
+
+mz=$((mz + 1))
+if (( mz > 9 )); then
+  mz=0
+  my=$((my + 1))
+  if (( my > 9 )); then
+    my=0
+    mx=$((mx + 1))
+  fi
+fi
+NEXT_MARKETING_VERSION="${mx}.${my}.${mz}"
+echo "Current marketing version: $CURRENT_MARKETING_VERSION · Using: $NEXT_MARKETING_VERSION"
+
+echo "Setting CURRENT_PROJECT_VERSION → $NEXT_BUILD, MARKETING_VERSION → $NEXT_MARKETING_VERSION"
+python3 - "$NEXT_BUILD" "$NEXT_MARKETING_VERSION" << 'PYEOF'
 import re, sys
 
-new_version = sys.argv[1]
+new_build = sys.argv[1]
+new_marketing = sys.argv[2]
 path = "Dientempo.xcodeproj/project.pbxproj"
 with open(path) as f:
     content = f.read()
 
 # Walk each XCBuildConfiguration block; only touch the ones that build the
 # Dientempo APP target (PRODUCT_BUNDLE_IDENTIFIER = com.bystruev.dientempo;),
-# not the DientempoTests target's own (unrelated) build number.
+# not the DientempoTests target's own (unrelated) versioning.
 pattern = re.compile(
     r"(isa = XCBuildConfiguration;\s*buildSettings = \{.*?\};)",
     re.DOTALL
@@ -104,11 +134,17 @@ def replace_block(match):
     block = match.group(1)
     if "PRODUCT_BUNDLE_IDENTIFIER = com.bystruev.dientempo;" not in block:
         return block
-    return re.sub(
+    block = re.sub(
         r"CURRENT_PROJECT_VERSION = [^;]+;",
-        f"CURRENT_PROJECT_VERSION = {new_version};",
+        f"CURRENT_PROJECT_VERSION = {new_build};",
         block
     )
+    block = re.sub(
+        r"MARKETING_VERSION = [^;]+;",
+        f"MARKETING_VERSION = {new_marketing};",
+        block
+    )
+    return block
 
 new_content, count = pattern.subn(replace_block, content)
 changed = new_content != content
@@ -116,9 +152,9 @@ with open(path, "w") as f:
     f.write(new_content)
 
 if not changed:
-    print("WARNING: no CURRENT_PROJECT_VERSION was updated — check project.pbxproj structure", file=sys.stderr)
+    print("WARNING: no version fields were updated — check project.pbxproj structure", file=sys.stderr)
     sys.exit(1)
-print(f"project.pbxproj updated to CURRENT_PROJECT_VERSION = {new_version}")
+print(f"project.pbxproj updated: CURRENT_PROJECT_VERSION = {new_build}, MARKETING_VERSION = {new_marketing}")
 PYEOF
 
 echo "Running $FASTLANE_BIN beta..."
