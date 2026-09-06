@@ -64,6 +64,70 @@ final class PurchaseManager: NSObject, ObservableObject {
         lastError = nil
         SKPaymentQueue.default().restoreCompletedTransactions()
     }
+
+    // MARK: - Grandfathering pre-existing paid purchasers
+
+    /// The only MARKETING_VERSION ever actually released to the App Store as
+    /// the paid $4.99 app (confirmed via App Store Connect: appStoreState
+    /// READY_FOR_SALE, version 1.0 -- every later "1.x" bump was internal
+    /// TestFlight testing only, never released). Anyone whose original
+    /// purchase was at or before this version bought the app back when
+    /// buying it WAS the unlock, so they should get unlimited access for
+    /// free going forward, with no action required from them.
+    private static let lastPaidVersion = "1.0"
+
+    /// Call once per launch (see ContentView.onAppear). Uses StoreKit 2's
+    /// `AppTransaction` (available iOS 16+, no extra capability, and safe to
+    /// mix with the StoreKit 1 purchase/restore flow above -- SK2's
+    /// transaction-reading APIs are read-only and don't touch the payment
+    /// queue) to read which version of the app the user ORIGINALLY
+    /// downloaded -- not the version currently installed -- and unlocks
+    /// premium automatically if that was at or before `lastPaidVersion`.
+    /// Idempotent and cheap: does nothing once already unlocked, and
+    /// `unlockPremium()` itself is idempotent.
+    func grandfatherExistingPaidUserIfNeeded() {
+        guard !PremiumManager.shared.isPremiumUnlocked else { return }
+
+        Task {
+            do {
+                let result = try await AppTransaction.shared
+                switch result {
+                case .verified(let appTransaction):
+                    if Self.isVersion(appTransaction.originalAppVersion, atOrBefore: Self.lastPaidVersion) {
+                        await MainActor.run {
+                            PremiumManager.shared.unlockPremium()
+                        }
+                    }
+                case .unverified:
+                    // Apple's own guidance: don't act on an unverified
+                    // result. A permanent free unlock is exactly the kind of
+                    // decision that must not be based on unverified data.
+                    break
+                }
+            } catch {
+                // No original transaction available (e.g. simulator without
+                // a signed receipt, or a genuinely fresh install that was
+                // never paid for) -- nothing to grandfather, not an error
+                // worth surfacing to the user.
+            }
+        }
+    }
+
+    /// Component-wise numeric version comparison ("1.0" <= "1.0" -> true,
+    /// "1.0" <= "1.4" -> true, "2.0" <= "1.0" -> false). Missing trailing
+    /// components are treated as 0, so "1" and "1.0" compare equal.
+    private static func isVersion(_ version: String, atOrBefore reference: String) -> Bool {
+        let v = version.split(separator: ".").compactMap { Int($0) }
+        let r = reference.split(separator: ".").compactMap { Int($0) }
+        for i in 0..<max(v.count, r.count) {
+            let vPart = i < v.count ? v[i] : 0
+            let rPart = i < r.count ? r[i] : 0
+            if vPart != rPart {
+                return vPart < rPart
+            }
+        }
+        return true
+    }
 }
 
 // MARK: - SKProductsRequestDelegate

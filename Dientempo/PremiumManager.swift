@@ -32,7 +32,8 @@ final class PremiumManager: ObservableObject {
 
     /// Returns true when the app is allowed to start a new counting session.
     var canRun: Bool {
-        isPremiumUnlocked || !ranToday()
+        if isForcedLockedForScreenshot { return false }
+        return isPremiumUnlocked || !ranToday()
     }
 
     private func ranToday() -> Bool {
@@ -99,5 +100,19 @@ final class PremiumManager: ObservableObject {
         isPremiumUnlocked = false
         defaults.set(false, forKey: premiumKey)
         defaults.removeObject(forKey: lastRunDateKey)
+    }
+
+    // MARK: - Screenshot mode
+
+    /// Forces `canRun` to false regardless of the real date/premium state,
+    /// so scripts/take-screenshots.sh can capture the lock screen (with the
+    /// IAP purchase button) deterministically -- needed as a review
+    /// screenshot showing the purchase button when submitting the IAP.
+    /// Screenshot-only; never invoked from normal app code paths.
+    private var isForcedLockedForScreenshot = false
+
+    func setForScreenshotLocked() {
+        isForcedLockedForScreenshot = true
+        objectWillChange.send()
     }
 }

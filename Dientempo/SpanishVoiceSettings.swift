@@ -132,6 +132,8 @@ enum SpanishVoicePreference {
 struct VoiceSettingsView: View {
     @AppStorage(SpanishVoicePreference.selectedVoiceIdentifierKey) private var selectedVoiceIdentifier = SpanishVoicePreference.automaticIdentifier
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var purchaseManager = PurchaseManager.shared
+    @StateObject private var premiumManager = PremiumManager.shared
 
     private var voices: [AVSpeechSynthesisVoice] {
         SpanishVoicePreference.sortedInstalledVoices
@@ -140,14 +142,45 @@ struct VoiceSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                voiceRow(title: "Automatic", subtitle: automaticSubtitle, identifier: SpanishVoicePreference.automaticIdentifier)
+                Section {
+                    voiceRow(title: "Automatic", subtitle: automaticSubtitle, identifier: SpanishVoicePreference.automaticIdentifier)
 
-                ForEach(voices, id: \.identifier) { voice in
-                    voiceRow(
-                        title: voice.name,
-                        subtitle: SpanishVoicePreference.description(for: voice),
-                        identifier: voice.identifier
-                    )
+                    ForEach(voices, id: \.identifier) { voice in
+                        voiceRow(
+                            title: voice.name,
+                            subtitle: SpanishVoicePreference.description(for: voice),
+                            identifier: voice.identifier
+                        )
+                    }
+                }
+
+                // Always reachable here, not just on the daily-limit lock
+                // screen -- someone who already bought Unlimited Access on
+                // another device (or reinstalled) gets their first free run
+                // of the day before ever seeing the lock screen, so this is
+                // the only place they could otherwise restore right away.
+                Section {
+                    if premiumManager.isPremiumUnlocked {
+                        Label("Unlimited Access active", systemImage: "checkmark.seal.fill")
+                            .foregroundStyle(.teal)
+                    } else {
+                        Button("Restore Purchase") {
+                            purchaseManager.restore()
+                        }
+                        .foregroundStyle(Color(.systemBlue))
+
+                        if let error = purchaseManager.lastError {
+                            Text(error.localizedDescription)
+                                .font(.caption)
+                                .foregroundStyle(Color(.red))
+                        }
+
+                        if purchaseManager.restoreCompleted {
+                            Text("Purchase restored.")
+                                .font(.caption)
+                                .foregroundStyle(Color(.green))
+                        }
+                    }
                 }
             }
             .navigationTitle("Voz")

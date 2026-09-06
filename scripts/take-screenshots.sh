@@ -15,6 +15,7 @@ SCREENSHOTS=(
     "2|ready|Ready to count (0 / cero, Vamos button)|--screenshot=0"
     "3|counting|Counting in progress (Alto button, number 42)|--screenshot=42 --screenshot-running"
     "4|voice|Voice settings (Voz picker)|--screenshot=voice"
+    "5|locked|Daily-limit lock screen with Unlimited Access purchase button|--screenshot=locked"
 )
 
 show_help() {
@@ -36,6 +37,9 @@ Screenshots:
   2  Ready to count (0 / cero, Vamos button)
   3  Counting in progress (Alto button, number 42)
   4  Voice settings (Voz picker)
+  5  Daily-limit lock screen (Unlimited Access purchase button) -- also the
+     one to submit as the review screenshot for the com.bystruev.dientempo.premium
+     In-App Purchase
 
 Examples:
   take-screenshots.sh 1 2      # Take screenshots 1 and 2

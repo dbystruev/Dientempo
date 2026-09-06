@@ -27,6 +27,7 @@ struct ContentView: View {
         .onAppear {
             applyPowerPolicy()
             wireSessionStartRecording()
+            purchaseManager.grandfatherExistingPaidUserIfNeeded()
 
             // Check for screenshot mode
             if let screenshotArg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--screenshot=") }) {
@@ -34,6 +35,11 @@ struct ContentView: View {
                 if parts.last == "warmup" {
                     // Keep warm-up state active for screenshot without starting actual warm-up
                     counter.setForScreenshotWarmup()
+                } else if parts.last == "locked" {
+                    // Force the lock screen (with the IAP purchase button)
+                    // for a deterministic App Store / IAP-review screenshot,
+                    // regardless of the simulator's real daily-limit state.
+                    premiumManager.setForScreenshotLocked()
                 } else {
                     counter.prepareSpeech()
                     if let numberStr = parts.last, let number = Int(numberStr) {
