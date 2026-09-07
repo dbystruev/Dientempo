@@ -167,8 +167,21 @@ take_screenshot() {
     local device_label="$4"
 
     local prefix=$(printf "%02d" "$num")
-    xcrun simctl io "$uuid" screenshot "$SCREENSHOTS_DIR/${prefix}_${device_label}-${filename}.png"
-    echo "   Saved: ${prefix}_${device_label}-${filename}.png"
+    local out_name="${prefix}_${device_label}-${filename}.png"
+
+    # `xcrun simctl io screenshot` writes via CoreSimulator's own process,
+    # which on some machines doesn't have write permission to nested
+    # directories under ~/Downloads (a macOS Files & Folders TCC quirk) even
+    # when this shell's own file writes work fine there. Route through /tmp
+    # first (always writable) and copy into place with a normal `cp`, which
+    # uses this shell's permissions instead.
+    local tmp_path
+    tmp_path="$(mktemp -t dientempo_screenshot).png"
+    xcrun simctl io "$uuid" screenshot "$tmp_path"
+    mkdir -p "$SCREENSHOTS_DIR"
+    cp "$tmp_path" "$SCREENSHOTS_DIR/$out_name"
+    rm -f "$tmp_path"
+    echo "   Saved: $out_name"
 }
 
 take_device_screenshots() {
