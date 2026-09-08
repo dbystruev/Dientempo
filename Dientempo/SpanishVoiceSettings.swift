@@ -154,16 +154,30 @@ struct VoiceSettingsView: View {
                     }
                 }
 
+                // Version + premium status: always visible here, not
+                // just inferred from behavior, so a person can actually
+                // confirm a purchase or restore took effect instead of
+                // guessing from whether the lock screen shows up again.
+                Section {
+                    LabeledContent("Version", value: appVersionString)
+                    LabeledContent("Premium") {
+                        if premiumManager.isPremiumUnlocked {
+                            Label("Active", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(.teal)
+                        } else {
+                            Text("Not active")
+                                .foregroundStyle(Color(.secondaryLabel))
+                        }
+                    }
+                }
+
                 // Always reachable here, not just on the daily-limit lock
                 // screen -- someone who already bought Unlimited Access on
                 // another device (or reinstalled) gets their first free run
                 // of the day before ever seeing the lock screen, so this is
                 // the only place they could otherwise restore right away.
-                Section {
-                    if premiumManager.isPremiumUnlocked {
-                        Label("Unlimited Access active", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.teal)
-                    } else {
+                if !premiumManager.isPremiumUnlocked {
+                    Section {
                         Button("Restore Purchase") {
                             purchaseManager.restore()
                         }
@@ -192,6 +206,17 @@ struct VoiceSettingsView: View {
                 }
             }
         }
+    }
+
+    /// e.g. "1.4.3 (2026.9.5)" -- CFBundleShortVersionString (MARKETING_VERSION)
+    /// and CFBundleVersion (CURRENT_PROJECT_VERSION) read straight from the
+    /// running app's own Info.plist, so this always matches exactly what
+    /// was actually built and shipped, no matter how versioning evolves.
+    private var appVersionString: String {
+        let bundle = Bundle.main
+        let shortVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let buildVersion = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(shortVersion) (\(buildVersion))"
     }
 
     private var automaticSubtitle: String {
